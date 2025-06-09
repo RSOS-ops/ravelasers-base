@@ -133,21 +133,27 @@ gltfLoader.load(
         presetManager = new PresetManager(laserSystem);
 
         try {
-            await presetManager.loadLibrary('laser-presets.json'); // Load presets
+            await presetManager.loadLibrary('laser-presets.json');
 
-            // Automatically apply the "BASIC" preset for testing
-            // The issue asked for "ChaoticFlurry", but we've defined "BASIC" so far.
-            // We'll use "BASIC".
-            if (presetManager.getPresetNames().includes('BASIC')) {
+            // --- MODIFIED PART ---
+            // Apply the "STATIC_AIM_ORIGIN" preset by default for testing the new behavior.
+            if (presetManager.getPresetNames().includes('STATIC_AIM_ORIGIN')) {
+                presetManager.applyPreset('STATIC_AIM_ORIGIN');
+                console.log("main.js: Applied 'STATIC_AIM_ORIGIN' preset.");
+            } else if (presetManager.getPresetNames().includes('BASIC')) {
+                // Fallback to BASIC if STATIC_AIM_ORIGIN is somehow not found
                 presetManager.applyPreset('BASIC');
+                console.warn("main.js: 'STATIC_AIM_ORIGIN' preset not found. Falling back to 'BASIC'.");
             } else if (presetManager.getPresetNames().length > 0) {
-                // If BASIC is not found, apply the first available preset
+                // Fallback to the first available preset if neither is found
                 const firstPreset = presetManager.getPresetNames()[0];
-                console.warn(`main.js: 'BASIC' preset not found. Applying first available preset: '${firstPreset}'.`);
+                console.warn(`main.js: Neither 'STATIC_AIM_ORIGIN' nor 'BASIC' preset found. Applying first available preset: '${firstPreset}'.`);
                 presetManager.applyPreset(firstPreset);
             } else {
-                console.warn("main.js: No presets loaded. Laser system will use default values.");
+                console.warn("main.js: No presets loaded. Laser system will use default values from LaserSystem constructor.");
             }
+            // --- END MODIFIED PART ---
+
         } catch (error) {
             console.error("main.js: Error during preset loading or applying:", error);
         }

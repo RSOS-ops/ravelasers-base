@@ -64,24 +64,23 @@ export class LaserSystem {
         this.raveLaserSystem1Line = null;
         this.raveLaserSystem1Origin1 = new THREE.Vector3();
         this.raveLaserSystem1InitialDirection1 = new THREE.Vector3(0, 0, -1);
-        this.raveLaserSystem1TargetVertex1 = new THREE.Vector3();
+        this.raveLaserSystem1TargetVertex1 = new THREE.Vector3(); // Will be set to (0,0,0)
 
         this.raveLaserSystem1Line2 = null;
         this.raveLaserSystem1Origin2 = new THREE.Vector3();
         this.raveLaserSystem1InitialDirection2 = new THREE.Vector3(0, 0, -1);
-        this.raveLaserSystem1TargetVertex2 = new THREE.Vector3();
+        this.raveLaserSystem1TargetVertex2 = new THREE.Vector3(); // Will be set to (0,0,0)
 
         this.raveLaserSystem1Line3 = null;
         this.raveLaserSystem1Origin3 = new THREE.Vector3();
         this.raveLaserSystem1InitialDirection3 = new THREE.Vector3(0, 0, -1);
-        this.raveLaserSystem1TargetVertex3 = new THREE.Vector3();
+        this.raveLaserSystem1TargetVertex3 = new THREE.Vector3(); // Will be set to (0,0,0)
 
         this.raveLaserSystem1Line4 = null;
         this.raveLaserSystem1Origin4 = new THREE.Vector3();
         this.raveLaserSystem1InitialDirection4 = new THREE.Vector3(0, 0, -1);
-        this.raveLaserSystem1TargetVertex4 = new THREE.Vector3();
+        this.raveLaserSystem1TargetVertex4 = new THREE.Vector3(); // Will be set to (0,0,0)
 
-        // Materials - will be updated by applyPreset
         this.raveLaserSystem1Material = new THREE.LineBasicMaterial({ color: this.laserColor });
         this.raveLaserSystem1Material2 = new THREE.LineBasicMaterial({ color: this.laserColor });
         this.raveLaserSystem1Material3 = new THREE.LineBasicMaterial({ color: this.laserColor });
@@ -130,34 +129,38 @@ export class LaserSystem {
     }
 
     initializeLasers() {
-        if (this.modelVertices.length === 0) {
-            console.warn("LaserSystem.initializeLasers: model vertices not ready. Using default origins.");
-            this.raveLaserSystem1Origin1.set(0, 0, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
-            this.raveLaserSystem1TargetVertex1.set(0,0,0);
-            this.raveLaserSystem1Origin2.set(0, 0, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
-            this.raveLaserSystem1TargetVertex2.set(0,0,0);
-            this.raveLaserSystem1Origin3.set(0, 0, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
-            this.raveLaserSystem1TargetVertex3.set(0,0,0);
-            this.raveLaserSystem1Origin4.set(0, 0, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
-            this.raveLaserSystem1TargetVertex4.set(0,0,0);
+        const fixedTarget = new THREE.Vector3(0, 0, 0); // All lasers target origin
+
+        if (this.modelVertices.length === 0) { // Still good to have a fallback, though origins are random
+            console.warn("LaserSystem.initializeLasers: model vertices not ready for robust origin sphere checks, but origins will be random relative to view target.");
+            // Origins will be random around camera target or sphere radius if controls.target is (0,0,0)
+            const originCenter = this.controls ? this.controls.target : new THREE.Vector3();
+            this.raveLaserSystem1Origin1 = getRandomPointOnSphere(originCenter, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
+            this.raveLaserSystem1Origin2 = getRandomPointOnSphere(originCenter, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
+            this.raveLaserSystem1Origin3 = getRandomPointOnSphere(originCenter, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
+            this.raveLaserSystem1Origin4 = getRandomPointOnSphere(originCenter, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
         } else {
-            const targetCenter = this.controls.target; // Use OrbitControls target as center for sphere
+            // Get random origins on the sphere
+            const targetCenter = this.controls.target;
             this.raveLaserSystem1Origin1 = getRandomPointOnSphere(targetCenter, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
-            this.raveLaserSystem1TargetVertex1 = getRandomTargetVertex(this.modelVertices);
             this.raveLaserSystem1Origin2 = getRandomPointOnSphere(targetCenter, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
-            this.raveLaserSystem1TargetVertex2 = getRandomTargetVertex(this.modelVertices);
             this.raveLaserSystem1Origin3 = getRandomPointOnSphere(targetCenter, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
-            this.raveLaserSystem1TargetVertex3 = getRandomTargetVertex(this.modelVertices);
             this.raveLaserSystem1Origin4 = getRandomPointOnSphere(targetCenter, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
-            this.raveLaserSystem1TargetVertex4 = getRandomTargetVertex(this.modelVertices);
         }
 
+        // Set fixed target for all lasers
+        this.raveLaserSystem1TargetVertex1.copy(fixedTarget);
+        this.raveLaserSystem1TargetVertex2.copy(fixedTarget);
+        this.raveLaserSystem1TargetVertex3.copy(fixedTarget);
+        this.raveLaserSystem1TargetVertex4.copy(fixedTarget);
+
+        // Calculate initial directions based on new origins and fixed target
         this.raveLaserSystem1InitialDirection1.subVectors(this.raveLaserSystem1TargetVertex1, this.raveLaserSystem1Origin1).normalize();
         this.raveLaserSystem1InitialDirection2.subVectors(this.raveLaserSystem1TargetVertex2, this.raveLaserSystem1Origin2).normalize();
         this.raveLaserSystem1InitialDirection3.subVectors(this.raveLaserSystem1TargetVertex3, this.raveLaserSystem1Origin3).normalize();
         this.raveLaserSystem1InitialDirection4.subVectors(this.raveLaserSystem1TargetVertex4, this.raveLaserSystem1Origin4).normalize();
 
-        console.log("LaserSystem: Lasers initialized.");
+        console.log("LaserSystem: Lasers initialized with fixed target (0,0,0) and static origins.");
     }
 
     applyPreset(config) {
@@ -219,13 +222,15 @@ export class LaserSystem {
     }
 
     _handleLaserJumpLogic() {
+        // This function is no longer called from update() for static behavior,
+        // but kept for potential future use with dynamic presets.
         if (this.modelVertices.length === 0) {
             return;
         }
-        const targetCenter = this.controls.target; // Use OrbitControls target
+        const targetCenter = this.controls.target;
 
         this.raveLaserSystem1Origin1 = getRandomPointOnSphere(targetCenter, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
-        this.raveLaserSystem1TargetVertex1 = getRandomTargetVertex(this.modelVertices);
+        this.raveLaserSystem1TargetVertex1 = getRandomTargetVertex(this.modelVertices); // This would revert to random target if called
         this.raveLaserSystem1InitialDirection1.subVectors(this.raveLaserSystem1TargetVertex1, this.raveLaserSystem1Origin1).normalize();
 
         this.raveLaserSystem1Origin2 = getRandomPointOnSphere(targetCenter, this.RAVE_LASER_SYSTEM_1_ORIGIN_SPHERE_RADIUS);
@@ -242,7 +247,9 @@ export class LaserSystem {
     }
 
     update(deltaTime, clock) {
-        // Camera stillness/movement detection for laser jumps
+        // --- MODIFIED PART ---
+        // Commented out camera stillness/movement detection and _handleLaserJumpLogic call
+        /*
         let deltaRotation = 0;
         let deltaPosition = 0;
 
@@ -267,22 +274,24 @@ export class LaserSystem {
                 }
             }
 
-            if (hasCameraMovedSignificantly) {
-                this._handleLaserJumpLogic();
-            }
+            // if (hasCameraMovedSignificantly) {
+            //     this._handleLaserJumpLogic(); // Call is commented out/removed
+            // }
 
             this.previousCameraPosition.copy(this.camera.position);
             this.previousCameraQuaternion.copy(this.camera.quaternion);
         }
+        */
+        // --- END MODIFIED PART ---
 
-        // Laser Pulsing Logic
-        let cameraSpeed = 0;
-        if (deltaTime > 0) {
-            cameraSpeed = (deltaPosition / deltaTime) + (deltaRotation / deltaTime);
-        }
-        cameraSpeed = Math.min(cameraSpeed, 10.0); // Clamp
+        // Laser Pulsing Logic (assuming this should still run)
+        // If deltaPosition and deltaRotation are needed for pulsing and they are not calculated above,
+        // this part might need adjustment or use of last known values.
+        // For now, let's assume pulsing continues based on preset params, not dynamic camera speed.
+        // To simplify, we can remove cameraSpeed influence on pulsing for this static mode.
 
-        const currentPulseFrequency = this.BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY + (cameraSpeed * this.RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY_SENSITIVITY);
+        // Simplified pulsing: uses base frequency, not affected by camera movement
+        const currentPulseFrequency = this.BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY;
         const sharedPulseIntensity = (Math.sin(clock.elapsedTime * currentPulseFrequency * Math.PI * 2) + 1) / 2;
         const brightnessScalar = this.MIN_RAVE_LASER_SYSTEM_1_BRIGHTNESS + (sharedPulseIntensity * (this.MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS - this.MIN_RAVE_LASER_SYSTEM_1_BRIGHTNESS));
 
