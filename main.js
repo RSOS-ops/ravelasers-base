@@ -149,20 +149,15 @@ gltfLoader.load(
         // Laser System Initialization...
         // ... (rest of the callback remains the same for now)
         laserSystem = new LaserSystem(scene, model, controls, camera); // model is now scaled
-        presetManager = new PresetManager(laserSystem);
-
-        try {
+        presetManager = new PresetManager(laserSystem);        try {
             await presetManager.loadLibrary('laser-presets.json'); 
             
-            if (presetManager.getPresetNames().includes('STATIC_AIM_ORIGIN')) {
-                presetManager.applyPreset('STATIC_AIM_ORIGIN');
-                console.log("main.js: Applied 'STATIC_AIM_ORIGIN' preset.");
-            } else if (presetManager.getPresetNames().includes('BASIC')) {
-                presetManager.applyPreset('BASIC');
-                console.warn("main.js: 'STATIC_AIM_ORIGIN' preset not found. Falling back to 'BASIC'.");
+            if (presetManager.getPresetNames().includes('behavior.1')) {
+                presetManager.applyPreset('behavior.1');
+                console.log("main.js: Applied 'behavior.1' preset.");
             } else if (presetManager.getPresetNames().length > 0) {
                 const firstPreset = presetManager.getPresetNames()[0];
-                console.warn(`main.js: Neither 'STATIC_AIM_ORIGIN' nor 'BASIC' preset found. Applying first available preset: '${firstPreset}'.`);
+                console.warn(`main.js: 'behavior.1' preset not found. Applying first available preset: '${firstPreset}'.`);
                 presetManager.applyPreset(firstPreset);
             } else {
                 console.warn("main.js: No presets loaded. Laser system will use default values from LaserSystem constructor.");

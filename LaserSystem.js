@@ -171,10 +171,18 @@ export class LaserSystem {
         this.BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY = config.BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY !== undefined ? config.BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY : this.BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY;
         this.RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY_SENSITIVITY = config.RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY_SENSITIVITY !== undefined ? config.RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY_SENSITIVITY : this.RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY_SENSITIVITY;
         this.MIN_RAVE_LASER_SYSTEM_1_BRIGHTNESS = config.MIN_RAVE_LASER_SYSTEM_1_BRIGHTNESS !== undefined ? config.MIN_RAVE_LASER_SYSTEM_1_BRIGHTNESS : this.MIN_RAVE_LASER_SYSTEM_1_BRIGHTNESS;
-        this.MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS = config.MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS !== undefined ? config.MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS : this.MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS;
-
-        if (config.laserColor !== undefined) {
-            this.laserColor.set(config.laserColor); // Assuming laserColor is a hex string like "0xff0000"
+        this.MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS = config.MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS !== undefined ? config.MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS : this.MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS;        if (config.laserColor !== undefined) {
+            // Convert hex string like "0xff0000" to proper format for Three.js
+            let colorValue = config.laserColor;
+            if (typeof colorValue === 'string') {
+                // Remove '0x' prefix if present and add '#' prefix
+                if (colorValue.startsWith('0x')) {
+                    colorValue = '#' + colorValue.slice(2);
+                } else if (!colorValue.startsWith('#')) {
+                    colorValue = '#' + colorValue;
+                }
+            }
+            this.laserColor.set(colorValue);
             this.raveLaserSystem1Material.color.set(this.laserColor);
             this.raveLaserSystem1Material2.color.set(this.laserColor);
             this.raveLaserSystem1Material3.color.set(this.laserColor);
