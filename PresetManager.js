@@ -1,51 +1,55 @@
 // PresetManager.js
+import { banks } from './banks.js';
 
 export class PresetManager {
     constructor(laserSystem) {
         this.laserSystem = laserSystem;
-        this.presets = {}; // To store the loaded presets
-        this.presetNames = [];
+        
+        // Current bank being applied
+        this.bank = {
+            current: null
+        };
+        
+        // Presets: Collections of bank names
+        this.presets = {
+            'rave_mode': ['bank1'],
+            'chill_mode': ['bank2'],
+            'chaos_mode': ['bank1', 'bank2', 'bank3']
+        };
     }
-
-    async loadLibrary(url) {
-        try {
-            const response = await fetch(url);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const libraryData = await response.json();
-
-            if (libraryData && libraryData.presets) {
-                this.presets = libraryData.presets;
-                this.presetNames = Object.keys(this.presets);
-                console.log("PresetManager: Laser library loaded successfully.", this.presetNames);
-            } else {
-                console.error("PresetManager: Invalid library format. 'presets' key not found.");
-                this.presets = {};
-                this.presetNames = [];
-            }
-        } catch (error) {
-            console.error("PresetManager: Failed to load laser library:", error);
-            this.presets = {}; // Ensure presets is empty on error
-            this.presetNames = [];
+    
+    applyPreset(presetName) {
+        const bankNames = this.presets[presetName];
+        if (!bankNames) {
+            console.error(`Preset '${presetName}' not found`);
+            return;
         }
+        
+        // Clear existing behaviors first
+        this.laserSystem.clearAllBehaviors();
+        
+        // Apply all banks in the preset
+        bankNames.forEach(bankName => this.applyBank(bankName));
     }
-
-    getPresetNames() {
-        return this.presetNames;
-    }    applyPreset(presetName) {
-        const presetData = this.presets[presetName];
-        if (presetData) {
-            // The structure in laser-presets.json is:
-            // presets.PRESET_NAME.config
-            if (presetData.config) {
-                this.laserSystem.applyPreset(presetData.config);
-                console.log(`PresetManager: Applied preset '${presetName}' - ${presetData.name}.`);
-            } else {
-                console.error(`PresetManager: Preset '${presetName}' has no config.`);
-            }
-        } else {
-            console.error(`PresetManager: Preset "${presetName}" not found.`);
+    
+    applyBank(bankName) {
+        const bankFunction = banks[bankName];
+        if (!bankFunction) {
+            console.error(`Bank '${bankName}' not found`);
+            return;
         }
+        
+        // Set current bank
+        this.bank.current = bankName;
+        
+        // Call the bank function to get array of behaviors
+        const behaviorsArray = bankFunction();
+        
+        // Add each behavior to the laser system
+        behaviorsArray.forEach(behavior => {
+            this.laserSystem.addBehavior(behavior);
+        });
+        
+        console.log(`PresetManager: Applied bank '${bankName}' with ${behaviorsArray.length} behaviors`);
     }
 }
