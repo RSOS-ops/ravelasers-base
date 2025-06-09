@@ -111,54 +111,65 @@ gltfLoader.load(
         model = gltf.scene;
         scene.add(model); // Add model to the scene here
 
+        // ---MODIFIED ORDER---
+        // 1. Adjust camera to the original model size first.
+        adjustCameraForModel(); 
+
+        // 2. Then scale the model. Camera position is now fixed.
+        model.scale.set(2, 2, 2); 
+        // ---END MODIFIED ORDER---
+
+        // --- SPOTLIGHT MODIFICATIONS ---
+        // Adjust spotLightDown
+        spotLightDown.distance *= 2;    // Double the distance
+        spotLightDown.angle *= 1.4;     // Increase angle by 40%
+        spotLightDown.intensity *= 2; // Double the intensity
+
+        // Adjust spotLightFace
+        spotLightFace.distance *= 2;    // Double the distance
+        spotLightFace.angle *= 1.4;     // Increase angle by 40%
+        spotLightFace.intensity *= 2; // Double the intensity
+        // --- END SPOTLIGHT MODIFICATIONS ---
+
         // Attach spotlights to the model
+        // These are added to the scaled model, their local positions are relative.
         const spotLightDownTargetObject = new THREE.Object3D();
-        model.add(spotLightDownTargetObject);
+        model.add(spotLightDownTargetObject); 
         spotLightDownTargetObject.position.set(0, 0, 0);
         spotLightDown.target = spotLightDownTargetObject;
         model.add(spotLightDown);
 
         const spotLightFaceTargetObject = new THREE.Object3D();
-        model.add(spotLightFaceTargetObject);
-        spotLightFaceTargetObject.position.set(0, 0.4, 0.0);
+        model.add(spotLightFaceTargetObject); 
+        spotLightFaceTargetObject.position.set(0, 0.4, 0.0); 
         spotLightFace.target = spotLightFaceTargetObject;
         model.add(spotLightFace);
         spotLightFace.position.set(0, -0.6, 0.5);
-
-        adjustCameraForModel();
-
-        // --- NEW Laser System Initialization ---
-        // Pass controls and camera to LaserSystem
-        laserSystem = new LaserSystem(scene, model, controls, camera);
+        
+        // Laser System Initialization...
+        // ... (rest of the callback remains the same for now)
+        laserSystem = new LaserSystem(scene, model, controls, camera); // model is now scaled
         presetManager = new PresetManager(laserSystem);
 
         try {
-            await presetManager.loadLibrary('laser-presets.json');
-
-            // --- MODIFIED PART ---
-            // Apply the "STATIC_AIM_ORIGIN" preset by default for testing the new behavior.
+            await presetManager.loadLibrary('laser-presets.json'); 
+            
             if (presetManager.getPresetNames().includes('STATIC_AIM_ORIGIN')) {
                 presetManager.applyPreset('STATIC_AIM_ORIGIN');
                 console.log("main.js: Applied 'STATIC_AIM_ORIGIN' preset.");
             } else if (presetManager.getPresetNames().includes('BASIC')) {
-                // Fallback to BASIC if STATIC_AIM_ORIGIN is somehow not found
                 presetManager.applyPreset('BASIC');
                 console.warn("main.js: 'STATIC_AIM_ORIGIN' preset not found. Falling back to 'BASIC'.");
             } else if (presetManager.getPresetNames().length > 0) {
-                // Fallback to the first available preset if neither is found
                 const firstPreset = presetManager.getPresetNames()[0];
                 console.warn(`main.js: Neither 'STATIC_AIM_ORIGIN' nor 'BASIC' preset found. Applying first available preset: '${firstPreset}'.`);
                 presetManager.applyPreset(firstPreset);
             } else {
                 console.warn("main.js: No presets loaded. Laser system will use default values from LaserSystem constructor.");
             }
-            // --- END MODIFIED PART ---
-
         } catch (error) {
             console.error("main.js: Error during preset loading or applying:", error);
         }
-        // --- END NEW Laser System Initialization ---
-
     },
     (xhr) => {
         console.log((xhr.loaded / xhr.total * 100) + '% loaded');
