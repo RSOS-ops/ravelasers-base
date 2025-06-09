@@ -1,7 +1,7 @@
 {
   "presets": {
     "BASIC": {
-      "description": "Basic Starting Point Preset",
+      "description": "Basic Starting Point Preset - Dynamic movement and targeting.",
       "banks": {
         "bank.1": {
           "name": "Default Bank",
@@ -9,7 +9,7 @@
           "behaviors": {
             "behavior.1": {
               "name": "BASIC",
-              "description": "Basic Starting Point",
+              "description": "Basic Starting Point - Dynamic",
               "config": {
                 "MAX_BOUNCES": 3,
                 "MAX_RAVE_LASER_SYSTEM_1_LENGTH": 20,
@@ -19,6 +19,31 @@
                 "MIN_RAVE_LASER_SYSTEM_1_BRIGHTNESS": 0.3,
                 "MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS": 2.5,
                 "laserColor": "0xff0000"
+              }
+            }
+          }
+        }
+      }
+    },
+    "STATIC_AIM_ORIGIN": {
+      "description": "Lasers have static origins, aim at (0,0,0), and do not jump.",
+      "banks": {
+        "bank.1": {
+          "name": "Static Aim Bank",
+          "description": "Collection of static aim behaviors.",
+          "behaviors": {
+            "behavior.1": {
+              "name": "STATIC_CENTER_AIM",
+              "description": "Static origins, aims at world center (0,0,0). Pulsing active.",
+              "config": {
+                "MAX_BOUNCES": 3,
+                "MAX_RAVE_LASER_SYSTEM_1_LENGTH": 20,
+                "RAVE_LASER_SYSTEM_1_STILLNESS_LIMIT": 99999, /* Effectively disabled */
+                "BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY": 0.5, /* Pulsing still active */
+                "RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY_SENSITIVITY": 0.0, /* No sensitivity to camera for pulsing */
+                "MIN_RAVE_LASER_SYSTEM_1_BRIGHTNESS": 0.3,
+                "MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS": 2.5,
+                "laserColor": "0x00ff00" /* Changed color to green for easy visual distinction */
               }
             }
           }
