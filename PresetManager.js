@@ -33,35 +33,16 @@ export class PresetManager {
 
     getPresetNames() {
         return this.presetNames;
-    }
-
-    applyPreset(presetName) {
+    }    applyPreset(presetName) {
         const presetData = this.presets[presetName];
         if (presetData) {
             // The structure in laser-presets.json is:
-            // presets.PRESET_NAME.banks.BANK_NAME.behaviors.BEHAVIOR_NAME.config
-            // For now, let's assume we want to apply the config from the *first* behavior
-            // of the *first* bank of the preset for simplicity, as per the initial setup.
-            // This can be made more sophisticated later if a preset can contain multiple banks/behaviors
-            // and the user needs to select which specific one to apply.
-
-            const firstBankName = Object.keys(presetData.banks)[0];
-            if (firstBankName) {
-                const firstBank = presetData.banks[firstBankName];
-                const firstBehaviorName = Object.keys(firstBank.behaviors)[0];
-                if (firstBehaviorName) {
-                    const behaviorToApply = firstBank.behaviors[firstBehaviorName];
-                    if (behaviorToApply && behaviorToApply.config) {
-                        this.laserSystem.applyPreset(behaviorToApply.config);
-                        console.log(`PresetManager: Applied preset '${presetName}' - behavior '${behaviorToApply.name}'.`);
-                    } else {
-                        console.error(`PresetManager: Behavior '${firstBehaviorName}' in bank '${firstBankName}' for preset '${presetName}' has no config.`);
-                    }
-                } else {
-                     console.error(`PresetManager: No behaviors found in bank '${firstBankName}' for preset '${presetName}'.`);
-                }
+            // presets.PRESET_NAME.config
+            if (presetData.config) {
+                this.laserSystem.applyPreset(presetData.config);
+                console.log(`PresetManager: Applied preset '${presetName}' - ${presetData.name}.`);
             } else {
-                console.error(`PresetManager: No banks found in preset '${presetName}'.`);
+                console.error(`PresetManager: Preset '${presetName}' has no config.`);
             }
         } else {
             console.error(`PresetManager: Preset "${presetName}" not found.`);

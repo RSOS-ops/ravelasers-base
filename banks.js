@@ -1,15 +1,22 @@
 // banks.js
+import { behaviors } from './behaviors.js';
 
 const banks = {
   "bank.1": {
-    "name": "Default Bank",
-    "description": "Default collection of laser behaviors.",
-    "behaviors": [
-      "behavior.1" // Reference to the BASIC behavior defined in behaviors.js
-    ]
+    "name": "STARTER_PACK",
+    "description": "Basic behaviors for beginners",
+    "behaviors": ["behavior.1", "behavior.3"]
+  },
+  "bank.2": {
+    "name": "HIGH_ENERGY",
+    "description": "Intense and dynamic behaviors",
+    "behaviors": ["behavior.2"]
+  },
+  "bank.3": {
+    "name": "ALL_BEHAVIORS",
+    "description": "Complete collection",
+    "behaviors": ["behavior.1", "behavior.2", "behavior.3"]
   }
-  // Future banks can be added here
 };
 
-// Commenting out export for now, similar to behaviors.js.
-// export default banks;
+export { banks };
