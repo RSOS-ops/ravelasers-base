@@ -1,52 +1,32 @@
 // behaviors.js
 
-const behaviors = {
-  "behavior.1": {
-    "name": "BASIC",
-    "description": "Basic Starting Point",
-    "config": {
-      "MAX_BOUNCES": 3,
-      "MAX_RAVE_LASER_SYSTEM_1_LENGTH": 20,
-      "RAVE_LASER_SYSTEM_1_STILLNESS_LIMIT": 0.16666666666666666,
-      "BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY": 0.5,
-      "RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY_SENSITIVITY": 5.0,
-      "MIN_RAVE_LASER_SYSTEM_1_BRIGHTNESS": 0.3,
-      "MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS": 2.5,
-      "laserColor": "0xff0000"
-    }
-  },
-  "behavior.2": {
-    "name": "HYPER_BOUNCE",
-    "description": "High energy with lots of bounces",
-    "config": {
-      "MAX_BOUNCES": 8,
-      "MAX_RAVE_LASER_SYSTEM_1_LENGTH": 35,
-      "RAVE_LASER_SYSTEM_1_STILLNESS_LIMIT": 0.05,
-      "BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY": 2.0,
-      "RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY_SENSITIVITY": 10.0,
-      "MIN_RAVE_LASER_SYSTEM_1_BRIGHTNESS": 0.8,
-      "MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS": 3.0,
-      "laserColor": "0x00ff00"
-    }
-  },
-  "behavior.3": {
-    "name": "SMOOTH_FLOW",
-    "description": "Gentle, flowing laser movements",
-    "config": {
-      "MAX_BOUNCES": 1,
-      "MAX_RAVE_LASER_SYSTEM_1_LENGTH": 50,
-      "RAVE_LASER_SYSTEM_1_STILLNESS_LIMIT": 0.5,
-      "BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY": 0.2,
-      "RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY_SENSITIVITY": 2.0,
-      "MIN_RAVE_LASER_SYSTEM_1_BRIGHTNESS": 0.1,
-      "MAX_RAVE_LASER_SYSTEM_1_BRIGHTNESS": 1.5,
-      "laserColor": "0x0000ff"
-    }
-  }
-  // Future behaviors can be added here
-};
+export const behaviors = {
+  behavior1: () => ({
+    // Define your behavior 1 settings here
+    laserCount: 4,
+    rotationSpeed: 0.5,
+    intensity: 1.0,
+    color: 0xff0000,
+    // Add other laser properties as needed
+  }),
 
-// It might be useful to export this if other modules need to import it directly,
-// but for now, it will primarily be used to construct the laser-presets.json.
-export { behaviors };
-// The structure will be used to build the JSON.
+  behavior2: () => ({
+    // Define your behavior 2 settings here
+    laserCount: 6,
+    rotationSpeed: 1.0,
+    intensity: 0.8,
+    color: 0x00ff00,
+    // Add other laser properties as needed
+  }),
+
+  behavior3: () => ({
+    // Define your behavior 3 settings here
+    laserCount: 8,
+    rotationSpeed: 0.3,
+    intensity: 1.2,
+    color: 0x0000ff,
+    // Add other laser properties as needed
+  }),
+
+  // Add more behaviors as needed
+};
