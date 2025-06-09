@@ -42,10 +42,14 @@ export class PresetManager {
         // Set current bank
         this.bank.current = bankName;
         
-        // Call the bank function to create and add the behavior
-        const behavior = bankFunction();
-        this.laserSystem.addBehavior(behavior);
+        // Call the bank function to get array of behaviors
+        const behaviorsArray = bankFunction();
         
-        console.log(`PresetManager: Applied bank '${bankName}'`);
+        // Add each behavior to the laser system
+        behaviorsArray.forEach(behavior => {
+            this.laserSystem.addBehavior(behavior);
+        });
+        
+        console.log(`PresetManager: Applied bank '${bankName}' with ${behaviorsArray.length} behaviors`);
     }
 }

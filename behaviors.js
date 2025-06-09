@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { getRandomPointOnSphere, getRandomTargetVertex } from './LaserSystem.js';
 
-export class FourLaserCenterTargetBehavior {
+// BEHAVIOR 1: Default (4 lasers targeting center)
+export class BehaviorDefault {
     constructor(config = {}) {
         this.id = 'default';
         
@@ -32,7 +33,7 @@ export class FourLaserCenterTargetBehavior {
     }
     
     init(laserSystem) {
-        console.log('FourLaserCenterTargetBehavior: Initializing default behavior');
+        console.log('BehaviorDefault: Initializing default behavior');
         this._setupLasers(laserSystem);
         this._initializeLaserPositions(laserSystem);
     }
@@ -68,7 +69,7 @@ export class FourLaserCenterTargetBehavior {
             this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
         }
         
-        console.log("FourLaserCenterTargetBehavior: Initialized default behavior with 4 lasers");
+        console.log("BehaviorDefault: Initialized default behavior with 4 lasers");
     }
     
     update(deltaTime, clock, laserSystem) {
@@ -180,12 +181,229 @@ export class FourLaserCenterTargetBehavior {
         this.origins = [];
         this.directions = [];
         this.targets = [];
-        console.log('FourLaserCenterTargetBehavior: Cleaned up default behavior');
+        console.log('BehaviorDefault: Cleaned up default behavior');
     }
 }
 
-// Export behaviors object for banks.js to use
+// BEHAVIOR 2: Two Laser Sweep
+export class BehaviorTwoLaserSweep {
+    constructor(config = {}) {
+        this.id = 'two_laser_sweep';
+        
+        // Different parameters for this behavior
+        this.SWEEP_SPEED = config.SWEEP_SPEED || 2.0;
+        this.SWEEP_RADIUS = config.SWEEP_RADIUS || 15;
+        this.BASE_PULSE_FREQUENCY = config.BASE_PULSE_FREQUENCY || 1.5;
+        this.MIN_BRIGHTNESS = config.MIN_BRIGHTNESS || 0.5;
+        this.MAX_BRIGHTNESS = config.MAX_BRIGHTNESS || 3.0;
+        this.MAX_LENGTH = config.MAX_LENGTH || 30;
+        this.MAX_BOUNCES = config.MAX_BOUNCES || 2;
+        this.laserColor = new THREE.Color(config.laserColor || 0x00ff00);
+        
+        this.laserLines = [];
+        this.materials = [];
+        this.sweepAngle = 0;
+    }
+    
+    init(laserSystem) {
+        console.log('BehaviorTwoLaserSweep: Initializing two laser sweep behavior');
+        // Create only 2 lasers that sweep in a pattern
+        this._setupLasers(laserSystem);
+    }
+    
+    _setupLasers(laserSystem) {
+        const scene = laserSystem.getScene();
+        
+        // Create 2 lasers
+        for (let i = 0; i < 2; i++) {
+            const material = new THREE.LineBasicMaterial({ color: this.laserColor });
+            const points = [new THREE.Vector3(), new THREE.Vector3(0, 0, 1)];
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geometry, material);
+            
+            scene.add(line);
+            this.laserLines.push(line);
+            this.materials.push(material);
+        }
+    }
+    
+    update(deltaTime, clock, laserSystem) {
+        // Sweeping motion logic
+        this.sweepAngle += this.SWEEP_SPEED * deltaTime;
+        
+        for (let i = 0; i < this.laserLines.length; i++) {
+            const angleOffset = (i * Math.PI) / this.laserLines.length;
+            const x = Math.cos(this.sweepAngle + angleOffset) * this.SWEEP_RADIUS;
+            const z = Math.sin(this.sweepAngle + angleOffset) * this.SWEEP_RADIUS;
+            
+            const target = new THREE.Vector3(x, 0, z);
+            this.laserLines[i].lookAt(target);
+        }
+        
+        // Update pulsing
+        this._updatePulsing(clock);
+    }
+    
+    _updatePulsing(clock) {
+        const currentPulseFrequency = this.BASE_PULSE_FREQUENCY;
+        const sharedPulseIntensity = (Math.sin(clock.elapsedTime * currentPulseFrequency * Math.PI * 2) + 1) / 2;
+        const brightnessScalar = this.MIN_BRIGHTNESS + (sharedPulseIntensity * (this.MAX_BRIGHTNESS - this.MIN_BRIGHTNESS));
+        
+        const currentLaserColorHex = parseInt(this.laserColor.getHexString(), 16);
+        
+        this.materials.forEach(material => {
+            material.color.setHex(currentLaserColorHex).multiplyScalar(brightnessScalar);
+        });
+    }
+    
+    cleanup(laserSystem) {
+        const scene = laserSystem.getScene();
+        this.laserLines.forEach(line => scene.remove(line));
+        this.laserLines = [];
+        this.materials = [];
+        console.log('BehaviorTwoLaserSweep: Cleaned up two laser sweep behavior');
+    }
+}
+
+// BEHAVIOR 3: Random Vertex Target
+export class BehaviorRandomVertex {
+    constructor(config = {}) {
+        this.id = 'random_vertex';
+        
+        this.LASER_COUNT = config.LASER_COUNT || 6;
+        this.RETARGET_FREQUENCY = config.RETARGET_FREQUENCY || 2.0;
+        this.BASE_PULSE_FREQUENCY = config.BASE_PULSE_FREQUENCY || 0.8;
+        this.laserColor = new THREE.Color(config.laserColor || 0x0066ff);
+        // ...other parameters
+        
+        this.retargetTimer = 0;
+    }
+    
+    init(laserSystem) {
+        console.log('BehaviorRandomVertex: Initializing random vertex targeting behavior');
+        // Create multiple lasers that target random model vertices
+        this._setupLasers(laserSystem);
+    }
+    
+    _setupLasers(laserSystem) {
+        const scene = laserSystem.getScene();
+        
+        // Create LASER_COUNT lasers
+        for (let i = 0; i < this.LASER_COUNT; i++) {
+            const material = new THREE.LineBasicMaterial({ color: this.laserColor });
+            const points = [new THREE.Vector3(), new THREE.Vector3(0, 0, 1)];
+            const geometry = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geometry, material);
+            
+            scene.add(line);
+            this.laserLines.push(line);
+            this.materials.push(material);
+        }
+    }
+    
+    update(deltaTime, clock, laserSystem) {
+        // Logic to retarget to random vertices periodically
+        this.retargetTimer += deltaTime;
+        if (this.retargetTimer >= this.RETARGET_FREQUENCY) {
+            this._retargetToRandomVertices(laserSystem);
+            this.retargetTimer = 0;
+        }
+        
+        // Update pulsing
+        this._updatePulsing(clock);
+    }
+    
+    _retargetToRandomVertices(laserSystem) {
+        for (let i = 0; i < this.laserLines.length; i++) {
+            const randomVertex = getRandomTargetVertex(); // Get random vertex from model
+            this.targets[i] = randomVertex.clone();
+            this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
+        }
+    }
+    
+    _updatePulsing(clock) {
+        const currentPulseFrequency = this.BASE_PULSE_FREQUENCY;
+        const sharedPulseIntensity = (Math.sin(clock.elapsedTime * currentPulseFrequency * Math.PI * 2) + 1) / 2;
+        const brightnessScalar = this.MIN_BRIGHTNESS + (sharedPulseIntensity * (this.MAX_BRIGHTNESS - this.MIN_BRIGHTNESS));
+        
+        const currentLaserColorHex = parseInt(this.laserColor.getHexString(), 16);
+        
+        this.materials.forEach(material => {
+            material.color.setHex(currentLaserColorHex).multiplyScalar(brightnessScalar);
+        });
+    }
+    
+    cleanup(laserSystem) {
+        const scene = laserSystem.getScene();
+        this.laserLines.forEach(line => scene.remove(line));
+        this.laserLines = [];
+        this.materials = [];
+        console.log('BehaviorRandomVertex: Cleaned up random vertex targeting behavior');
+    }
+}
+
+// BEHAVIOR 4: Single Beam Chase
+export class BehaviorSingleChase {
+    constructor(config = {}) {
+        this.id = 'single_chase';
+        
+        this.CHASE_SPEED = config.CHASE_SPEED || 5.0;
+        this.BEAM_INTENSITY = config.BEAM_INTENSITY || 4.0;
+        this.laserColor = new THREE.Color(config.laserColor || 0xff00ff);
+        // ...parameters for single intense chasing beam
+    }
+    
+    init(laserSystem) {
+        console.log('BehaviorSingleChase: Initializing single chase beam behavior');
+        // Create one intense beam that follows camera or target
+        this._setupLaser(laserSystem);
+    }
+    
+    _setupLaser(laserSystem) {
+        const scene = laserSystem.getScene();
+        
+        const material = new THREE.LineBasicMaterial({ color: this.laserColor });
+        const points = [new THREE.Vector3(), new THREE.Vector3(0, 0, 1)];
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        this.laserLine = new THREE.Line(geometry, material);
+        
+        scene.add(this.laserLine);
+    }
+    
+    update(deltaTime, clock, laserSystem) {
+        // Chase logic - follow camera or moving target
+        const camera = laserSystem.getCamera();
+        if (camera) {
+            const target = camera.position.clone().add(camera.getWorldDirection(new THREE.Vector3()).multiplyScalar(10));
+            this.laserLine.lookAt(target);
+        }
+        
+        // Update pulsing
+        this._updatePulsing(clock);
+    }
+    
+    _updatePulsing(clock) {
+        const currentPulseFrequency = this.BASE_PULSE_FREQUENCY;
+        const sharedPulseIntensity = (Math.sin(clock.elapsedTime * currentPulseFrequency * Math.PI * 2) + 1) / 2;
+        const brightnessScalar = this.MIN_BRIGHTNESS + (sharedPulseIntensity * (this.MAX_BRIGHTNESS - this.MIN_BRIGHTNESS));
+        
+        const currentLaserColorHex = parseInt(this.laserColor.getHexString(), 16);
+        
+        this.laserLine.material.color.setHex(currentLaserColorHex).multiplyScalar(brightnessScalar);
+    }
+    
+    cleanup(laserSystem) {
+        const scene = laserSystem.getScene();
+        scene.remove(this.laserLine);
+        console.log('BehaviorSingleChase: Cleaned up single chase beam behavior');
+    }
+}
+
+// Export all behaviors for banks.js to use
 export const behaviors = {
-    default: (config = {}) => new FourLaserCenterTargetBehavior(config),
-    // Add other behavior factory functions here
+    default: (config = {}) => new BehaviorDefault(config),
+    twoLaserSweep: (config = {}) => new BehaviorTwoLaserSweep(config),
+    randomVertex: (config = {}) => new BehaviorRandomVertex(config),
+    singleChase: (config = {}) => new BehaviorSingleChase(config),
+    // Add more behaviors here as you create them
 };
