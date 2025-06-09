@@ -50,8 +50,8 @@ lockControls(); // tradición
 const ambientLight = new THREE.AmbientLight(0xffffff, 3);
 scene.add(ambientLight);
 // Directional Light Setup
-const directionalLight = new THREE.DirectionalLight(0xffffff, 5);
-directionalLight.position.set(0, 3, 5); // Position light from camera perspective
+const directionalLight = new THREE.DirectionalLight(0xffffff, 25);
+directionalLight.position.set(0, 3, 3); // Position light from camera perspective
 scene.add(directionalLight);
 const directionalLightTarget = new THREE.Object3D();
 scene.add(directionalLightTarget);
@@ -107,7 +107,7 @@ function adjustCameraForModel() {
 }
 
 const gltfLoader = new GLTFLoader();
-const modelUrl = 'HoodedCory_NewHood_Darker.DecimatedFace.glb';
+const modelUrl = './models/HoodedCory_NewHood_Darker.DecimatedFace.glb';
 
 gltfLoader.load(
     modelUrl,
