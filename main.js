@@ -71,6 +71,26 @@ controls.target.set(0, 0, 0);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
 
+// Add controls lock state
+let controlsLocked = false;
+
+// Function to lock controls
+function lockControls() {
+    controlsLocked = true;
+    controls.enabled = false;
+    console.log("Controls locked");
+}
+
+// Function to unlock controls
+function unlockControls() {
+    controlsLocked = false;
+    controls.enabled = true;
+    console.log("Controls unlocked");
+}
+
+// Lock controls immediately
+lockControls();
+
 // Lighting Setup
 const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
 scene.add(ambientLight);
@@ -461,10 +481,11 @@ function handleLaserJumpLogic() {
 
 // Animation Loop
 function animate() {
-    const deltaTime = clock.getDelta(); // Get time elapsed since last frame
+    const deltaTime = clock.getDelta();
     requestAnimationFrame(animate);
 
-    if (controls.enableDamping) {
+    // Only update controls if they're not locked
+    if (controls.enableDamping && !controlsLocked) {
         controls.update();
     }
 
@@ -599,7 +620,7 @@ function animate() {
     //     spotlightDownLaserLine.geometry.setFromPoints(points);
     //     spotlightDownLaserLine.geometry.attributes.position.needsUpdate = true;
     // }
-
+    //
     // if (spotlightFaceLaserLine && spotLightFace && spotLightFace.target && spotLightFace.parent === model) { // Check if model is parent
     //     const worldSpotLightFacePos = new THREE.Vector3();
     //     spotLightFace.getWorldPosition(worldSpotLightFacePos);
