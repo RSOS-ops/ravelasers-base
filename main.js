@@ -50,16 +50,16 @@ lockControls(); // tradición
 const ambientLight = new THREE.AmbientLight(0xffffff, 3);
 scene.add(ambientLight);
 // Directional Light Setup
-const directionalLight = new THREE.DirectionalLight(0xffffff, 5);
-directionalLight.position.set(0, 3, 5); // Position light from camera perspective
+const directionalLight = new THREE.DirectionalLight(0xffffff, 25);
+directionalLight.position.set(0, 3, 3); // Position light from camera perspective
 scene.add(directionalLight);
 const directionalLightTarget = new THREE.Object3D();
 scene.add(directionalLightTarget);
 directionalLight.target = directionalLightTarget;
 
 // Add lighting helpers
-const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, 1);
-scene.add(directionalLightHelper);
+// const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, 1);
+// scene.add(directionalLightHelper);
 
 // Spotlights (still managed in main.js as they are scene lighting, not laser effects)
 const spotLightDown = new THREE.SpotLight(0xffffff, 0);
@@ -107,7 +107,7 @@ function adjustCameraForModel() {
 }
 
 const gltfLoader = new GLTFLoader();
-const modelUrl = 'HoodedCory_NewHood_Darker.DecimatedFace.glb';
+const modelUrl = './models/HoodedCory_NewHood_Darker.DecimatedFace.glb';
 
 gltfLoader.load(
     modelUrl,
@@ -120,7 +120,8 @@ gltfLoader.load(
         adjustCameraForModel(); 
 
         // 2. Then scale the model. Camera position is now fixed.
-        model.scale.set(2, 2, 2); 
+        model.scale.setScalar(1.66);
+        
         
         // Rotate the model -155 degrees on the y-axis
         model.rotation.y = THREE.MathUtils.degToRad(-155);
@@ -160,11 +161,11 @@ gltfLoader.load(
         spotLightFace.position.set(0, -0.6, 0.5);
         
         // Add spotlight helpers
-        const spotLightDownHelper = new THREE.SpotLightHelper(spotLightDown);
-        scene.add(spotLightDownHelper);
+        // const spotLightDownHelper = new THREE.SpotLightHelper(spotLightDown);
+        // scene.add(spotLightDownHelper);
         
-        const spotLightFaceHelper = new THREE.SpotLightHelper(spotLightFace);
-        scene.add(spotLightFaceHelper);
+        // const spotLightFaceHelper = new THREE.SpotLightHelper(spotLightFace);
+        // scene.add(spotLightFaceHelper);
         
         // Laser System Initialization
         laserSystem = new LaserSystem(scene, model, controls, camera); // model is now scaled
