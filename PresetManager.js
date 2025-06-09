@@ -5,71 +5,47 @@ export class PresetManager {
     constructor(laserSystem) {
         this.laserSystem = laserSystem;
         
-        // Behaviors: Individual parameter configurations
-        this.behaviors = {
-            'intense_red': {
-                MAX_BOUNCES: 5,
-                MAX_RAVE_LASER_SYSTEM_1_LENGTH: 25,
-                BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY: 1.0,
-                laserColor: "0xff0000"
-            },
-            'smooth_blue': {
-                MAX_BOUNCES: 2,
-                MAX_RAVE_LASER_SYSTEM_1_LENGTH: 15,
-                BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY: 0.3,
-                laserColor: "0x0066ff"
-            },
-            'rapid_green': {
-                MAX_BOUNCES: 8,
-                BASE_RAVE_LASER_SYSTEM_1_PULSE_FREQUENCY: 2.0,
-                laserColor: "0x00ff00"
-            }
+        // Current bank being applied
+        this.bank = {
+            current: null
         };
         
-        // Banks: Collections of behaviors
-        this.banks = {
-            'bank1': ['intense_red'],
-            'bank2': ['smooth_blue', 'rapid_green'],
-            'bank3': ['intense_red', 'smooth_blue']
-        };
-        
-        // Presets: Collections of banks
+        // Presets: Collections of bank names
         this.presets = {
-            'rave_mode': ['bank1', 'bank2'],
-            'chill_mode': ['bank3'],
+            'rave_mode': ['bank1'],
+            'chill_mode': ['bank2'],
             'chaos_mode': ['bank1', 'bank2', 'bank3']
         };
     }
     
     applyPreset(presetName) {
-        const banks = this.presets[presetName];
-        if (!banks) {
+        const bankNames = this.presets[presetName];
+        if (!bankNames) {
             console.error(`Preset '${presetName}' not found`);
             return;
         }
         
+        // Clear existing behaviors first
+        this.laserSystem.clearAllBehaviors();
+        
         // Apply all banks in the preset
-        banks.forEach(bankName => this.applyBank(bankName));
+        bankNames.forEach(bankName => this.applyBank(bankName));
     }
     
     applyBank(bankName) {
-        const behaviors = this.banks[bankName];
-        if (!behaviors) {
+        const bankFunction = banks[bankName];
+        if (!bankFunction) {
             console.error(`Bank '${bankName}' not found`);
             return;
         }
         
-        // Apply all behaviors in the bank
-        behaviors.forEach(behaviorName => this.applyBehavior(behaviorName));
-    }
-    
-    applyBehavior(behaviorName) {
-        const config = this.behaviors[behaviorName];
-        if (!config) {
-            console.error(`Behavior '${behaviorName}' not found`);
-            return;
-        }
+        // Set current bank
+        this.bank.current = bankName;
         
-        this.laserSystem.applyPreset(config);
+        // Call the bank function to create and add the behavior
+        const behavior = bankFunction();
+        this.laserSystem.addBehavior(behavior);
+        
+        console.log(`PresetManager: Applied bank '${bankName}'`);
     }
 }
