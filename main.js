@@ -20,13 +20,19 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 // Renderer Setup
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Enable soft shadows
 document.body.appendChild(renderer.domElement);
 
 // Controls Setup
-let controls = new OrbitControls(camera, renderer.domElement);
-controls.target.set(0, 0, 0);
+const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.dampingFactor = 0.05;
+controls.dampingFactor = 0.25;
+controls.enableZoom = true;
+controls.enablePan = false; // Disable panning
+controls.maxPolarAngle = Math.PI / 2; // Lock to horizontal orbit only
+controls.minPolarAngle = Math.PI / 2; // Lock to horizontal orbit only
+controls.enableRotate = true;
 
 // CLI Setup
 const cli = new CLI();
@@ -52,13 +58,21 @@ function unlockControls() {
 lockControls(); // tradición
 
 // Lighting Setup
-const ambientLight = new THREE.AmbientLight(0xffffff, 3);
+const ambientLight = new THREE.AmbientLight(0xffffff, 0);
 scene.add(ambientLight);
 
 // Directional Light Setup
-const directionalLight = new THREE.DirectionalLight(0xffffff, 5);
+const directionalLight = new THREE.DirectionalLight(0xffffff, .5);
 directionalLight.position.set(2, .5, 3); // Position light from camera perspective
-directionalLight.castShadow = false; // Disable shadows for better performance
+directionalLight.castShadow = true; // Enable shadows
+directionalLight.shadow.mapSize.width = 2048;
+directionalLight.shadow.mapSize.height = 2048;
+directionalLight.shadow.camera.near = 0.5;
+directionalLight.shadow.camera.far = 10;
+directionalLight.shadow.camera.left = -5;
+directionalLight.shadow.camera.right = 5;
+directionalLight.shadow.camera.top = 5;
+directionalLight.shadow.camera.bottom = -5;
 scene.add(directionalLight);
 const directionalLightTarget = new THREE.Object3D();
 directionalLightTarget.position.set(0, 0, 0); // Target the model center
@@ -66,23 +80,18 @@ scene.add(directionalLightTarget);
 directionalLight.target = directionalLightTarget;
 
 // Add lighting helpers
-//const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, .5);
-//scene.add(directionalLightHelper);
+const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, .5);
+scene.add(directionalLightHelper);
 
 // Spotlights (still managed in main.js as they are scene lighting, not laser effects)
 const spotLightDown = new THREE.SpotLight(0xffffff, 2);
-spotLightDown.distance = 1;
-spotLightDown.angle = Math.PI / 8;
-spotLightDown.penumbra = 0.5;
-spotLightDown.decay = 2;
+const spotLightFace = new THREE.SpotLight(0xffffff, 2);
 
-const spotLightFace = new THREE.SpotLight();
-spotLightFace.color.set(0xffffff);
-spotLightFace.intensity = 0;
-spotLightFace.distance = 0.85;
-spotLightFace.angle = Math.PI / 11.5;
-spotLightFace.penumbra = 0.5;
-spotLightFace.decay = 0.5;
+// Create flasher spotlight objects
+const flasher1 = new THREE.SpotLight(0xffffff, 3);
+const flasher2 = new THREE.SpotLight(0xffffff, 3);
+const flasher3 = new THREE.SpotLight(0xffffff, 3);
+const flasher4 = new THREE.SpotLight(0xffffff, 3);
 
 // Model Setup & Loading
 let model; // This will hold the loaded GLTF scene
@@ -107,7 +116,7 @@ function adjustCameraForModel() {
     const modelHeight = size.y;
     const fovInRadians = THREE.MathUtils.degToRad(camera.fov);
     let cameraZ = (modelHeight / 2) / Math.tan(fovInRadians / 2);
-    cameraZ *= 4; // Adjusted distance
+    cameraZ = (cameraZ * 4) - 3; // Scale then offset (more explicit)
     camera.position.set(0, 0, cameraZ);
     controls.target.set(0, 0, 0);
     controls.update();
@@ -118,77 +127,134 @@ function adjustCameraForModel() {
 // Spotlight Configuration - Easy to adjust positions and settings
 const spotlightConfig = {
     spotLightDown: {
-        position: { x: 0, y: 2, z: 0 },        // Light position
-        target: { x: 0, y: 0, z: 0 },          // Target center of model
+        position: { x: 0, y: 2, z: 0 },
+        target: { x: 0, y: 0, z: 0 },
         color: 0xffffff,
-        intensity: 5,                           // 2 * 2 (original * multiplier)
-        distance: 2,                            // 1 * 2 (original * multiplier)
-        angle: Math.PI / 8 * .75,              // Original angle * 1.4
+        intensity: 0,
+        distance: 2,
+        angle: Math.PI / 8 * .75,
         penumbra: 0.5,
         decay: 2,
         showHelper: false
     },
     spotLightFace: {
-        position: { x: 0, y: -1.2, z: 1.0 },   // Light position
-        target: { x: 0, y: 0, z: 0 },          // Target center of model
+        position: { x: 0, y: -1.2, z: 1.0 },
+        target: { x: 0, y: 0, z: 0 },
         color: 0xffffff,
-        intensity: 0,                           // 0 * 2 (original * multiplier)
-        distance: 1.7,                          // 0.85 * 2 (original * multiplier)
-        angle: Math.PI / 11.5 * 1.4,           // Original angle * 1.4
+        intensity: 0,
+        distance: 1.7,
+        angle: Math.PI / 11.5 * 1.4,
         penumbra: 0.5,
         decay: 0.5,
         showHelper: false
+    },
+    // New "Flashers" lighting system - 4 symmetrical spotlights
+    flasher1: {
+        position: { x: 1.5, y: 1.5, z: 1.5 },    // Closer to model
+        target: { x: 0, y: 0.25, z: 0 },
+        color: 0xff0000,  // Red color to make it more visible
+        intensity: 12,     // Increased intensity
+        distance: 2.75,      // Reduced distance
+        angle: THREE.MathUtils.degToRad(7),  // 7 degrees
+        penumbra: 0.3,
+        decay: 1,
+        showHelper: true  // Enable helper
+    },
+    flasher2: {
+        position: { x: -1.5, y: 1.5, z: 1.5 },
+        target: { x: 0, y: 0.25, z: 0 },
+        color: 0x00ff00,  // Green color
+        intensity: 12,
+        distance: 2.75,
+        angle: THREE.MathUtils.degToRad(7),  // 7 degrees
+        penumbra: 0.3,
+        decay: 1,
+        showHelper: true  // Enable helper
+    },
+    flasher3: {
+        position: { x: 1.5, y: 1.5, z: -1.5 },
+        target: { x: 0, y: -0.25, z: 0 },
+        color: 0xffffff,  // White color
+        intensity: 25,
+        distance: 2.75,
+        angle: THREE.MathUtils.degToRad(8),  // 8 degrees
+        penumbra: 0.3,
+        decay: 1,
+        showHelper: true  // Enable helper
+    },
+    flasher4: {
+        position: { x: -1.5, y: 1.5, z: -1.5 },
+        target: { x: 0, y: -0.25, z: 0 },
+        color: 0xffffff,  // White color
+        intensity: 25,
+        distance: 2.75,
+        angle: THREE.MathUtils.degToRad(8),  // 8 degrees
+        penumbra: 0.3,
+        decay: 1,
+        showHelper: true  // Enable helper
     }
 };
 
 function setupSpotlights() {
-    // Setup spotLightDown
-    const downConfig = spotlightConfig.spotLightDown;
-    spotLightDown.color.setHex(downConfig.color);
-    spotLightDown.intensity = downConfig.intensity;
-    spotLightDown.distance = downConfig.distance;
-    spotLightDown.angle = downConfig.angle;
-    spotLightDown.penumbra = downConfig.penumbra;
-    spotLightDown.decay = downConfig.decay;
-    spotLightDown.position.set(downConfig.position.x, downConfig.position.y, downConfig.position.z);
+    // Setup existing spotlights (spotLightDown and spotLightFace)
+    Object.keys(spotlightConfig).forEach(lightKey => {
+        const config = spotlightConfig[lightKey];
+        let spotlight;
+        
+        // Get the appropriate spotlight object
+        if (lightKey === 'spotLightDown') {
+            spotlight = spotLightDown;
+        } else if (lightKey === 'spotLightFace') {
+            spotlight = spotLightFace;
+        } else if (lightKey === 'flasher1') {
+            spotlight = flasher1;
+        } else if (lightKey === 'flasher2') {
+            spotlight = flasher2;
+        } else if (lightKey === 'flasher3') {
+            spotlight = flasher3;
+        } else if (lightKey === 'flasher4') {
+            spotlight = flasher4;
+        }
+        
+        if (spotlight) {
+            // Configure spotlight properties
+            spotlight.color.setHex(config.color);
+            spotlight.intensity = config.intensity;
+            spotlight.distance = config.distance;
+            spotlight.angle = config.angle;
+            spotlight.penumbra = config.penumbra;
+            spotlight.decay = config.decay;
+            spotlight.position.set(config.position.x, config.position.y, config.position.z);
+            
+            // Enable shadow casting for all spotlights
+            spotlight.castShadow = true;
+            spotlight.shadow.mapSize.width = 1024;
+            spotlight.shadow.mapSize.height = 1024;
+            spotlight.shadow.camera.near = 0.5;
+            spotlight.shadow.camera.far = config.distance + 1;
+            spotlight.shadow.camera.fov = THREE.MathUtils.radToDeg(config.angle) * 2;
+            
+            // Create and set target
+            const target = new THREE.Object3D();
+            target.position.set(config.target.x, config.target.y, config.target.z);
+            scene.add(target);
+            spotlight.target = target;
+            scene.add(spotlight);
+            
+            // Add helper if enabled
+            if (config.showHelper) {
+                const helper = new THREE.SpotLightHelper(spotlight);
+                scene.add(helper);
+                console.log(`✅ Helper added for ${lightKey} at position (${config.position.x}, ${config.position.y}, ${config.position.z})`);
+            }
+        }
+    });
     
-    const spotLightDownTarget = new THREE.Object3D();
-    spotLightDownTarget.position.set(downConfig.target.x, downConfig.target.y, downConfig.target.z);
-    scene.add(spotLightDownTarget);
-    spotLightDown.target = spotLightDownTarget;
-    scene.add(spotLightDown);
-    
-    if (downConfig.showHelper) {
-        const spotLightDownHelper = new THREE.SpotLightHelper(spotLightDown);
-        scene.add(spotLightDownHelper);
-    }
-    
-    // Setup spotLightFace
-    const faceConfig = spotlightConfig.spotLightFace;
-    spotLightFace.color.setHex(faceConfig.color);
-    spotLightFace.intensity = faceConfig.intensity;
-    spotLightFace.distance = faceConfig.distance;
-    spotLightFace.angle = faceConfig.angle;
-    spotLightFace.penumbra = faceConfig.penumbra;
-    spotLightFace.decay = faceConfig.decay;
-    spotLightFace.position.set(faceConfig.position.x, faceConfig.position.y, faceConfig.position.z);
-    
-    const spotLightFaceTarget = new THREE.Object3D();
-    spotLightFaceTarget.position.set(faceConfig.target.x, faceConfig.target.y, faceConfig.target.z);
-    scene.add(spotLightFaceTarget);
-    spotLightFace.target = spotLightFaceTarget;
-    scene.add(spotLightFace);
-    
-    if (faceConfig.showHelper) {
-        const spotLightFaceHelper = new THREE.SpotLightHelper(spotLightFace);
-        scene.add(spotLightFaceHelper);
-    }
-    
-    console.log("Spotlights configured and added to scene");
+    console.log("🔦 All spotlights configured with shadow casting enabled.");
 }
 
 const gltfLoader = new GLTFLoader();
-const modelUrl = './models/CoryHead_Planar.glb';
+const modelUrl = './models/wirehead.glb';
 
 gltfLoader.load(
     modelUrl,
@@ -201,7 +267,7 @@ gltfLoader.load(
         adjustCameraForModel(); 
 
         // 2. Then scale the model. Camera position is now fixed.
-        model.scale.set(2, 2, 2); 
+        model.scale.set(.75, .75, .75); 
         
         // Rotate the model 48 degrees on the y-axis
         model.rotation.y = THREE.MathUtils.degToRad(48);
@@ -224,12 +290,15 @@ gltfLoader.load(
         console.log("Directional light target position:", directionalLight.target.position);
         console.log("Directional light intensity:", directionalLight.intensity);
         
-        // Ensure model materials can receive lighting
+        // Ensure model materials can receive lighting and cast/receive shadows
         model.traverse((child) => {
             if (child.isMesh) {
                 // Ensure the material can receive lighting
                 if (child.material) {
                     child.material.needsUpdate = true;
+                    // Enable shadow casting and receiving
+                    child.castShadow = true;
+                    child.receiveShadow = true;
                     // If material doesn't respond to lights, log it
                     if (child.material.type === 'MeshBasicMaterial') {
                         console.warn("Model has MeshBasicMaterial which doesn't respond to lights");
