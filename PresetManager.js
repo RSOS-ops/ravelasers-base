@@ -19,6 +19,60 @@ export class PresetManager {
             'chill_mode': ['bank2'],
             'chaos_mode': ['bank1', 'bank2', 'bank3']
         };
+        
+        // Auto-load saved default after a short delay to ensure system is ready
+        setTimeout(() => this.loadSavedDefault(), 100);
+    }
+
+    /**
+     * Load the saved default behavior or bank (called on startup)
+     */
+    loadSavedDefault() {
+        const defaultData = this.saveLoadManager.loadSavedDefault();
+        if (!defaultData) {
+            console.log('💡 No saved default found - starting with no lasers');
+            // Don't load any fallback - let the user choose what they want
+            return;
+        }
+
+        if (defaultData.type === 'behavior') {
+            console.log(`🔄 Auto-loading saved default behavior: "${defaultData.name}"`);
+            this.laserSystem.clearAllBehaviors();
+            
+            const behaviorType = defaultData.config._behaviorType || 'default';
+            const configCopy = { ...defaultData.config };
+            delete configCopy._behaviorType;
+            
+            const behaviorFactory = behaviors[behaviorType];
+            if (behaviorFactory) {
+                const behavior = behaviorFactory(configCopy);
+                this.laserSystem.addBehavior(behavior);
+                console.log(`✅ Auto-loaded default behavior: "${defaultData.name}" (type: ${behaviorType})`);
+            } else {
+                console.error(`❌ Unknown behavior type: ${behaviorType}`);
+            }
+        } else if (defaultData.type === 'bank') {
+            console.log(`🔄 Auto-loading saved default bank: "${defaultData.name}"`);
+            this.laserSystem.clearAllBehaviors();
+            
+            for (const behaviorName of defaultData.behaviorNames) {
+                const config = this.saveLoadManager.loadBehavior(behaviorName);
+                if (config) {
+                    const behaviorType = config._behaviorType || 'default';
+                    const configCopy = { ...config };
+                    delete configCopy._behaviorType;
+                    
+                    const behaviorFactory = behaviors[behaviorType];
+                    if (behaviorFactory) {
+                        const behavior = behaviorFactory(configCopy);
+                        this.laserSystem.addBehavior(behavior);
+                    }
+                }
+            }
+            
+            this.bank.current = defaultData.name;
+            console.log(`✅ Auto-loaded default bank: "${defaultData.name}"`);
+        }
     }
 
     // ====== NEW SIMPLE METHODS ======
@@ -27,9 +81,10 @@ export class PresetManager {
      * Save current laser setup as a behavior
      * @param {string} name - Name to save as
      * @param {object} config - Behavior configuration
+     * @param {string} behaviorType - Type of behavior (default, wireframe, etc.)
      */
-    saveBehavior(name, config) {
-        return this.saveLoadManager.saveBehavior(name, config);
+    saveBehavior(name, config, behaviorType = 'default') {
+        return this.saveLoadManager.saveBehavior(name, config, behaviorType);
     }
 
     /**
@@ -40,10 +95,26 @@ export class PresetManager {
         const config = this.saveLoadManager.loadBehavior(name);
         if (config) {
             this.laserSystem.clearAllBehaviors();
-            const behavior = behaviors.default(config);
-            this.laserSystem.addBehavior(behavior);
-            console.log(`✅ Applied behavior: "${name}"`);
-            return true;
+            
+            // Determine which behavior type to use
+            const behaviorType = config._behaviorType || 'default';
+            delete config._behaviorType; // Remove metadata before passing to behavior constructor
+            
+            // Use the appropriate behavior factory function
+            const behaviorFactory = behaviors[behaviorType];
+            if (behaviorFactory) {
+                const behavior = behaviorFactory(config);
+                this.laserSystem.addBehavior(behavior);
+                console.log(`✅ Applied behavior: "${name}" (type: ${behaviorType})`);
+                
+                // Set as scene-default for persistence across reloads
+                this.saveLoadManager.setSceneDefault(name, 'behavior');
+                
+                return true;
+            } else {
+                console.error(`❌ Unknown behavior type: ${behaviorType}`);
+                return false;
+            }
         }
         return false;
     }
@@ -69,13 +140,28 @@ export class PresetManager {
             for (const behaviorName of behaviorNames) {
                 const config = this.saveLoadManager.loadBehavior(behaviorName);
                 if (config) {
-                    const behavior = behaviors.default(config);
-                    this.laserSystem.addBehavior(behavior);
+                    // Determine which behavior type to use
+                    const behaviorType = config._behaviorType || 'default';
+                    const configCopy = { ...config };
+                    delete configCopy._behaviorType; // Remove metadata before passing to behavior constructor
+                    
+                    // Use the appropriate behavior factory function
+                    const behaviorFactory = behaviors[behaviorType];
+                    if (behaviorFactory) {
+                        const behavior = behaviorFactory(configCopy);
+                        this.laserSystem.addBehavior(behavior);
+                    } else {
+                        console.error(`❌ Unknown behavior type: ${behaviorType} for behavior: ${behaviorName}`);
+                    }
                 }
             }
             
             this.bank.current = bankName;
             console.log(`✅ Applied bank: "${bankName}"`);
+            
+            // Set as scene-default for persistence across reloads
+            this.saveLoadManager.setSceneDefault(bankName, 'bank');
+            
             return true;
         }
         return false;
@@ -107,6 +193,56 @@ export class PresetManager {
      */
     getSaveLoadManager() {
         return this.saveLoadManager;
+    }
+
+    /**
+     * Clear all currently loaded behaviors/banks and scene-default
+     */
+    clearAll() {
+        this.laserSystem.clearAllBehaviors();
+        this.saveLoadManager.clearSceneDefault();
+        this.bank.current = null;
+        console.log('🧹 Cleared all behaviors and scene-default');
+    }
+
+    /**
+     * Get the current scene state (what would be restored on reload)
+     */
+    getCurrentSceneState() {
+        return this.saveLoadManager.getSceneDefault();
+    }
+
+    /**
+     * Show current status (scene-default and regular default)
+     */
+    showStatus() {
+        const sceneDefault = this.saveLoadManager.getSceneDefault();
+        const defaultSetting = this.saveLoadManager.getDefault();
+
+        console.log('\n=== CURRENT STATUS ===');
+        
+        if (sceneDefault) {
+            console.log(`🎬 Scene-default: ${sceneDefault.type} "${sceneDefault.name}"`);
+            console.log('  (This will reload on page refresh)');
+        } else {
+            console.log('🎬 Scene-default: None set');
+        }
+
+        if (defaultSetting) {
+            console.log(`📌 Default: ${defaultSetting.type} "${defaultSetting.name}"`);
+            console.log('  (Fallback if no scene-default)');
+        } else {
+            console.log('📌 Default: None set');
+        }
+
+        console.log('======================\n');
+    }
+
+    /**
+     * Clear scene-default (useful for console access)
+     */
+    clearSceneDefault() {
+        this.saveLoadManager.clearSceneDefault();
     }
 
     // ====== LEGACY METHODS (for backward compatibility) ======

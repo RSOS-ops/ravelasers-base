@@ -126,14 +126,28 @@ console.log("MAX_BRIGHTNESS: 1.0-5.0  (maximum laser intensity)");
 console.log("\n🚀 WORKING DEMONSTRATION:");
 console.log("The following commands are ready to execute:");
 
-// Execute a working demo automatically
-setTimeout(() => {
-    console.log("\n✅ Auto-loading red_default behavior in 2 seconds...");
-    setTimeout(() => {
-        if (typeof presetManager !== 'undefined') {
-            presetManager.loadBehavior('red_default');
-            console.log("✅ Red lasers loaded! Try the chaos mode next:");
-            console.log("presetManager.loadBank('chaos_mode')");
-        }
-    }, 2000);
-}, 1000);
+// Demo commands are available but not auto-executed
+console.log("\n💡 To try the demo:");
+console.log("presetManager.loadBehavior('red_default')");
+console.log("presetManager.loadBank('chaos_mode')");
+console.log("\nOr use the CLI interface or factory commands!");
+
+console.log("\n🎬 NEW: Scene-Default System!");
+console.log("===============================");
+console.log("Any behavior or bank you load automatically becomes your 'scene-default'");
+console.log("and will be restored when you reload the page or restart the app.");
+console.log("");
+console.log("// Load a behavior - it becomes scene-default automatically");
+console.log("presetManager.loadBehavior('blue_bounce')");
+console.log("");
+console.log("// Check current scene state");
+console.log("presetManager.showStatus()");
+console.log("");
+console.log("// CLI commands:");
+console.log("> status           // Show current scene-default and regular default");
+console.log("> scene            // Show current scene-default");
+console.log("> scene clear      // Clear scene-default");
+console.log("> clear-all        // Clear everything and start fresh");
+console.log("");
+console.log("The system prioritizes: Scene-default → Regular default → Nothing");
+console.log("This ensures your current session state is always preserved!");

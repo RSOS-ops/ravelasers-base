@@ -95,17 +95,35 @@ export class CLI {
                 description: 'List saved behaviors or banks',
                 usage: 'list [behaviors|banks]',
                 execute: (args) => this.listItems(args)
-            },
-            show: {
+            },            show: {
                 description: 'Show all saved configurations',
                 usage: 'show',
                 execute: () => this.showAll()
+            },            default: {
+                description: 'Show or clear current default',
+                usage: 'default [clear]',
+                execute: (args) => this.manageDefault(args)
+            },
+            scene: {
+                description: 'Show or clear current scene state',
+                usage: 'scene [clear]',
+                execute: (args) => this.manageScene(args)
+            },
+            status: {
+                description: 'Show current scene state and defaults',
+                usage: 'status',
+                execute: () => this.showStatus()
+            },
+            'clear-all': {
+                description: 'Clear all behaviors and scene state',
+                usage: 'clear-all',
+                execute: () => this.clearAllBehaviors()
             },
             preset: {
                 description: 'Load a preset (legacy)',
                 usage: 'preset <rave_mode|chill_mode|chaos_mode>',
                 execute: (args) => this.loadPreset(args)
-            },            colors: {
+            },colors: {
                 description: 'Show color examples',
                 usage: 'colors',
                 execute: () => this.showColors()
@@ -245,7 +263,7 @@ export class CLI {
 
         const name = args[0];
         if (this.presetManager.loadBehavior(name)) {
-            this.addOutput(`✅ Loaded behavior: ${name}`, 'result');
+            this.addOutput(`✅ Loaded behavior: ${name} (set as default)`, 'result');
         } else {
             this.addOutput(`❌ Failed to load behavior: ${name}`, 'error');
         }
@@ -264,7 +282,7 @@ export class CLI {
 
         const name = args[0];
         if (this.presetManager.loadBank(name)) {
-            this.addOutput(`✅ Loaded bank: ${name}`, 'result');
+            this.addOutput(`✅ Loaded bank: ${name} (set as default)`, 'result');
         } else {
             this.addOutput(`❌ Failed to load bank: ${name}`, 'error');
         }
@@ -489,5 +507,92 @@ export class CLI {
 
         const status = visibility ? 'ON' : 'OFF';
         this.addOutput(`💡 Light helpers turned ${status} (${helpers.length} helpers)`, 'result');
+    }    manageDefault(args) {
+        if (!this.presetManager) {
+            this.addOutput('PresetManager not available!', 'error');
+            return;
+        }
+
+        const saveLoadManager = this.presetManager.getSaveLoadManager();
+        
+        if (args.length > 0 && args[0].toLowerCase() === 'clear') {
+            saveLoadManager.clearDefault();
+            this.addOutput('🗑️ Cleared default setting', 'result');
+            return;
+        }
+
+        const defaultSetting = saveLoadManager.getDefault();
+        if (defaultSetting) {
+            this.addOutput(`📌 Current default ${defaultSetting.type}: ${defaultSetting.name}`, 'info');
+            this.addOutput('Use "default clear" to clear the default', 'info');
+        } else {
+            this.addOutput('💡 No default set', 'info');
+            this.addOutput('Load any behavior or bank to set it as default', 'info');
+        }
+    }
+
+    manageScene(args) {
+        if (!this.presetManager) {
+            this.addOutput('PresetManager not available!', 'error');
+            return;
+        }
+
+        const saveLoadManager = this.presetManager.getSaveLoadManager();
+        
+        if (args.length > 0 && args[0].toLowerCase() === 'clear') {
+            saveLoadManager.clearSceneDefault();
+            this.addOutput('🗑️ Cleared scene-default setting', 'result');
+            return;
+        }
+
+        const sceneDefault = saveLoadManager.getSceneDefault();
+        if (sceneDefault) {
+            this.addOutput(`🎬 Current scene-default ${sceneDefault.type}: ${sceneDefault.name}`, 'info');
+            this.addOutput('This will reload on next page refresh', 'info');
+            this.addOutput('Use "scene clear" to clear the scene-default', 'info');
+        } else {
+            this.addOutput('💡 No scene-default set', 'info');
+            this.addOutput('Load any behavior or bank to set it as scene-default', 'info');
+        }
+    }
+
+    showStatus() {
+        if (!this.presetManager) {
+            this.addOutput('PresetManager not available!', 'error');
+            return;
+        }
+
+        const saveLoadManager = this.presetManager.getSaveLoadManager();
+        const sceneDefault = saveLoadManager.getSceneDefault();
+        const defaultSetting = saveLoadManager.getDefault();
+
+        this.addOutput('=== CURRENT STATUS ===', 'info');
+        
+        if (sceneDefault) {
+            this.addOutput(`🎬 Scene-default: ${sceneDefault.type} "${sceneDefault.name}"`, 'result');
+            this.addOutput('  (This will reload on page refresh)', 'info');
+        } else {
+            this.addOutput('🎬 Scene-default: None set', 'info');
+        }
+
+        if (defaultSetting) {
+            this.addOutput(`📌 Default: ${defaultSetting.type} "${defaultSetting.name}"`, 'result');
+            this.addOutput('  (Fallback if no scene-default)', 'info');
+        } else {
+            this.addOutput('📌 Default: None set', 'info');
+        }
+
+        this.addOutput('======================', 'info');
+    }
+
+    clearAllBehaviors() {
+        if (!this.presetManager) {
+            this.addOutput('PresetManager not available!', 'error');
+            return;
+        }
+
+        this.presetManager.clearAll();
+        this.addOutput('🧹 Cleared all behaviors and scene-default', 'result');
+        this.addOutput('Page will start empty on next reload', 'info');
     }
 }

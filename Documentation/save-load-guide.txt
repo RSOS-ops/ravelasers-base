@@ -1,7 +1,20 @@
-// How to Use the Save/Load System
-// ================================
+// How to Use the Save/Load System + Scene-Default Persistence
+// ===========================================================
 
 // The system is now super simple! Open your browser console and use these commands:
+
+// ====== NEW: SCENE-DEFAULT SYSTEM ======
+// Any behavior or bank you load automatically becomes your "scene-default"
+// and will be restored when you reload the page or restart the app.
+
+// Example: Load a behavior
+presetManager.loadBehavior('my_red_lasers');  // Automatically becomes scene-default
+
+// Check your current state
+presetManager.showStatus();  // Shows scene-default and regular default
+
+// Clear scene-default if you want fresh starts
+presetManager.clearSceneDefault();
 
 // ====== BASIC USAGE ======
 
@@ -58,6 +71,14 @@ presetManager.loadBank('calm_mode');   // Apply calm mode!
 // BANKS = Collections of behaviors
 //     ↓  
 // PRESETS = Collections of banks (legacy system, still works)
+//
+// PERSISTENCE PRIORITY (what loads on page refresh):
+// 1. Scene-default (whatever you loaded last)
+// 2. Regular default (what you manually set as default)
+// 3. Nothing (clean start)
+//
+// Scene-default = Current session state (automatic)
+// Regular default = Fallback setting (manual)
 
 // ====== DEFAULT CONFIGURATIONS ======
 // These are already loaded for you:

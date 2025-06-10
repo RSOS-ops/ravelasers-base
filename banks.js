@@ -1,32 +1,37 @@
-import { behaviors } from './behaviors/behaviors.js';
+import { behaviors, savedBehaviorConfigs } from './behaviors/behaviors.js';
 
 // --- Banks: These are the actual bank definitions ---
 export const banks = {
-    // rave_mode
+    // default - basic single red laser behavior (fallback if no saved default)
+    default: () => [
+        behaviors.red_default(savedBehaviorConfigs.red_default)
+    ],
+
+    // rave_mode - uses red_default saved behavior
     bank1: () => [
-        behaviors.default()
+        behaviors.red_default(savedBehaviorConfigs.red_default)
     ],
 
-    // chill_mode
+    // chill_mode - uses green_lasers saved behavior
     bank2: () => [
-        behaviors.default({ laserColor: 0x00ff00 })
+        behaviors.green_lasers(savedBehaviorConfigs.green_lasers)
     ],
 
-    // chaos_mode (along with bank1 and bank2)
+    // chaos_mode - uses blue_bounce saved behavior
     bank3: () => [
-        behaviors.default({ laserColor: 0x0000ff, MAX_BOUNCES: 5 })
+        behaviors.blue_bounce(savedBehaviorConfigs.blue_bounce)
     ],
 
-    // Not referenced in savedBankConfigs
+    // yellow_wide bank
     bank4: () => [
-        behaviors.default({ laserColor: 0xffff00, ORIGIN_SPHERE_RADIUS: 15 })
+        behaviors.yellow_wide(savedBehaviorConfigs.yellow_wide)
     ],
 
-    // Not referenced in savedBankConfigs
+    // Multi-behavior bank example
     bank5: () => [
         behaviors.default(),
-        behaviors.default({ laserColor: 0x00ff00, ORIGIN_SPHERE_RADIUS: 15 }),
-        behaviors.default({ laserColor: 0x0000ff, ORIGIN_SPHERE_RADIUS: 5 })
+        behaviors.green_lasers({ laserColor: 0x00ff00, ORIGIN_SPHERE_RADIUS: 15 }),
+        behaviors.blue_bounce({ laserColor: 0x0000ff, ORIGIN_SPHERE_RADIUS: 5 })
     ]
 };
 
@@ -38,4 +43,14 @@ export const savedBankConfigs = {
     chill_mode: ['green_lasers'],
     // chaos_mode uses configs for red_default, green_lasers, blue_bounce (bank1, bank2, bank3)
     chaos_mode: ['red_default', 'green_lasers', 'blue_bounce']
+};
+
+// Helper function to get bank by name
+export const getBankByName = (bankName) => {
+    return banks[bankName] || banks.default;
+};
+
+// Helper function to get all available bank names
+export const getAvailableBanks = () => {
+    return Object.keys(banks);
 };

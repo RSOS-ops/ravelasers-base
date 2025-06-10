@@ -3,6 +3,11 @@
 ## Overview
 Use these commands in the **green CLI terminal** on the left side of the screen. The CLI provides an easy interface to manage laser configurations without using the browser console.
 
+**✨ New Features:**
+- **Automatic Persistence**: All loaded behaviors and banks automatically become your default and reload on page refresh
+- **Multiple Behavior Types**: Support for different laser behavior types (default, wireframe)
+- **Enhanced CLI**: Comprehensive command set with testing, helpers, and factory integration
+
 ---
 
 ## Basic Commands
@@ -18,6 +23,7 @@ Get detailed help for a specific command
 ```
 > help save
 > help load-behavior
+> help default
 ```
 
 ### `clear`
@@ -30,7 +36,7 @@ Clear the CLI output screen
 
 ## Behavior Management
 
-### `save <name> <color> [bounces] [radius]`
+### `save <n> <color> [bounces] [radius]`
 Save a new laser behavior configuration
 ```
 > save my_blue 0x0080ff 5 15
@@ -38,19 +44,20 @@ Save a new laser behavior configuration
 > save chaos 0x00ff00 8 25
 ```
 
-### `load-behavior <name>`
-Load a previously saved behavior
+### `load-behavior <n>`
+Load a previously saved behavior (automatically becomes default)
 ```
 > load-behavior my_blue
 > load-behavior red_default
-> load-behavior green_lasers
+> load-behavior wireframe_default
 ```
+*Note: Loading a behavior sets it as your default and it will automatically load on page refresh*
 
 ---
 
 ## Bank Management
 
-### `save-bank <name> <behavior1> [behavior2] [behavior3]...`
+### `save-bank <n> <behavior1> [behavior2] [behavior3]...`
 Save a bank containing multiple behaviors
 ```
 > save-bank party_mix red_default green_lasers blue_bounce
@@ -58,12 +65,111 @@ Save a bank containing multiple behaviors
 > save-bank chaos_mode red_default green_lasers blue_bounce yellow_wide
 ```
 
-### `load-bank <name>`
-Load a bank (collection of behaviors)
+### `load-bank <n>`
+Load a bank (collection of behaviors) (automatically becomes default)
 ```
 > load-bank party_mix
 > load-bank rave_mode
 > load-bank chill_mode
+```
+*Note: Loading a bank sets it as your default and it will automatically load on page refresh*
+
+---
+
+## Default Management
+
+### `default`
+Show current default behavior or bank
+```
+> default
+```
+
+### `default clear`
+Clear the current default setting
+```
+> default clear
+```
+
+### `scene`
+Show current scene-default (what will reload on page refresh)
+```
+> scene
+```
+
+### `scene clear`
+Clear the current scene-default
+```
+> scene clear
+```
+
+### `status`
+Show both scene-default and regular default
+```
+> status
+```
+
+### `clear-all`
+Clear all behaviors and scene-default
+```
+> clear-all
+```
+
+**How Persistence Works:**
+- **Scene-default**: Automatically set when you load any behavior or bank
+- **Regular default**: Manually set fallback (rarely needed now)
+- **Priority**: Scene-default → Regular default → Nothing
+- Any behavior/bank you load becomes your scene-default and persists across reloads
+- Use `clear-all` for completely fresh starts
+
+---
+
+## Testing & Development
+
+### `test <color> [bounces] [radius]`
+Test a laser configuration temporarily
+```
+> test 0x00ff00 5 15
+> test 0xff0000
+> test 0x0080ff 8 20
+```
+
+### `quick <preset>`
+Apply quick test presets for rapid prototyping
+```
+> quick fast
+> quick slow
+> quick bouncy
+> quick wide
+> quick fire
+> quick ice
+> quick chaos
+> quick zen
+```
+
+**Available Quick Presets:**
+- `fast` - High-speed lasers
+- `slow` - Relaxed pace
+- `bouncy` - Many bounces
+- `wide` - Large origin sphere
+- `fire` - Red/orange chaos
+- `ice` - Cool blue tones
+- `chaos` - Random everything
+- `zen` - Calm and minimal
+
+---
+
+## Scene Helpers
+
+### `helpers-on`
+Turn on light helpers for debugging
+```
+> helpers-on
+```
+
+### `helpers-off`
+Turn off light helpers
+```
+> helpers-off
 ```
 
 ---
@@ -94,6 +200,12 @@ Show complete summary of all saved items with details
 > show
 ```
 
+### `factory`
+Show factory console commands help
+```
+> factory
+```
+
 ---
 
 ## Color Reference
@@ -117,10 +229,10 @@ Display available color hex codes
 
 ---
 
-## Quick Presets
+## Legacy Presets
 
-### `preset <name>`
-Load built-in preset configurations
+### `preset <n>`
+Load built-in preset configurations (legacy)
 ```
 > preset rave_mode
 > preset chill_mode
@@ -132,9 +244,9 @@ Load built-in preset configurations
 ## Parameter Reference
 
 ### Behavior Parameters
-When using `save <name> <color> [bounces] [radius]`:
+When using `save <n> <color> [bounces] [radius]`:
 
-- **`<name>`**: Unique identifier for your configuration
+- **`<n>`**: Unique identifier for your configuration
 - **`<color>`**: Hex color code (e.g., `0xff0000` for red)
 - **`[bounces]`**: Number of bounces (1-10, optional, default: 3)
 - **`[radius]`**: Origin sphere radius (5-30, optional, default: 10)
@@ -150,11 +262,16 @@ When using `save <name> <color> [bounces] [radius]`:
 
 ## Built-in Configurations
 
+### Available Behavior Types
+- **default** - Standard laser behaviors with physics-based movement
+- **wireframe** - Wireframe rendering style behaviors
+
 ### Default Behaviors
-- `red_default` - Standard red lasers
+- `red_default` - Standard red lasers (default type)
 - `green_lasers` - Green laser configuration
-- `blue_bounce` - Blue with extra bounces
+- `blue_bounce` - Blue with extra bounces  
 - `yellow_wide` - Yellow with wide origin sphere
+- `wireframe_default` - Green wireframe lasers (wireframe type)
 
 ### Default Banks
 - `rave_mode` - High-energy laser show
@@ -163,37 +280,109 @@ When using `save <name> <color> [bounces] [radius]`:
 
 ---
 
-## Usage Tips
+## Complete Command List
 
-1. **Start Simple**: Try `load-behavior red_default` first
-2. **Experiment**: Use `save` to create variations with different colors
-3. **Organize**: Group related behaviors into banks
-4. **Reference**: Use `show` to see what you've created
-5. **Help**: Type `help <command>` for detailed command help
+| Command | Description |
+|---------|-------------|
+| `help` | Show all commands or help for specific command |
+| `clear` | Clear output screen |
+| `save` | Save behavior configuration |
+| `load-behavior` | Load saved behavior (sets as scene-default) |
+| `load-bank` | Load saved bank (sets as scene-default) |
+| `save-bank` | Save bank with multiple behaviors |
+| `list` | List saved behaviors and/or banks |
+| `show` | Show complete summary with details |
+| `default` | Show or clear current default |
+| `scene` | Show or clear current scene-default |
+| `status` | Show both scene-default and regular default |
+| `clear-all` | Clear all behaviors and scene-default |
+| `test` | Test laser configuration temporarily |
+| `quick` | Apply quick test presets |
+| `colors` | Show color reference |
+| `preset` | Load legacy presets |
+| `factory` | Show factory console commands |
+| `helpers-on` | Enable light helpers |
+| `helpers-off` | Disable light helpers |
 
 ---
 
-## Example Workflow
+## Usage Tips
 
+1. **Start Simple**: Try `load-behavior red_default` first
+2. **Persistence**: Any behavior/bank you load becomes your default
+3. **Experiment**: Use `test` and `quick` for rapid prototyping
+4. **Organize**: Group related behaviors into banks
+5. **Reference**: Use `show` to see what you've created
+6. **Debugging**: Use `helpers-on` to see light positions
+7. **Help**: Type `help <command>` for detailed command help
+
+---
+
+## Example Workflows
+
+### Basic Setup
 ```bash
-# 1. Load a default to see how it works
+# Load a default to see how it works
 > load-behavior red_default
 
-# 2. Create your own variation
-> save my_favorite 0xff0080 5 15
+# It's now your default - will reload on page refresh
+> default
+```
 
-# 3. Create more variations
+### Create Custom Behaviors
+```bash
+# Create your own variations
+> save my_favorite 0xff0080 5 15
 > save speed_demon 0x00ff00 3 8
 > save bouncy_castle 0x0080ff 10 20
 
-# 4. Group them into a collection
+# Test quickly
+> quick chaos
+> test 0x00ffff 6 12
+```
+
+### Build Collections
+```bash
+# Group behaviors into a bank
 > save-bank my_collection my_favorite speed_demon bouncy_castle
 
-# 5. Load your collection anytime
+# Load your collection (becomes default)
 > load-bank my_collection
 
-# 6. See what you've built
+# See what you've built
 > show
+```
+
+### Persistence Management
+```bash
+# Check current scene state
+> status
+
+# Load something - automatically becomes scene-default
+> load-behavior wireframe_default
+
+# Verify it's set
+> scene
+
+# Page reload will now restore wireframe_default automatically
+
+# Want fresh starts? Clear everything
+> clear-all
+
+# Now page reloads will be empty until you load something new
+```
+
+### Scene-Default vs Regular Default
+```bash
+# Scene-default: automatic persistence (recommended)
+> load-behavior my_favorite    # Automatically persisted
+
+# Regular default: manual fallback setting (advanced)
+> default                      # Shows manual default
+> default clear               # Clear manual default
+
+# Priority: scene-default always wins over regular default
+> status                       # Shows both for comparison
 ```
 
 ---
@@ -215,3 +404,12 @@ When using `save <name> <color> [bounces] [radius]`:
 **Bank not loading?**
 - Use `list banks` to see saved banks
 - Make sure all behaviors in the bank exist
+
+**Default not persisting?**
+- Check browser local storage permissions
+- Try `default clear` and reload a behavior
+
+**Need to debug?**
+- Use `helpers-on` to see light positions
+- Use `factory` for advanced console commands
+- Check browser console for technical errors

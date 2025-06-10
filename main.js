@@ -257,7 +257,7 @@ function setupSpotlights() {
 }
 
 const gltfLoader = new GLTFLoader();
-const modelUrl = './models/wirehead.glb';
+const modelUrl = './models/wirehead-3-thicker.glb';
 
 gltfLoader.load(
     modelUrl,
@@ -330,13 +330,9 @@ gltfLoader.load(
         console.log("Try: factory.quickTest('fast') or factory.showColors()");
         console.log("Or: presetManager.showSaved()");
         
-        // Apply default bank
-        try {
-            presetManager.applyPreset('rave_mode'); // Applies bank1 + bank2
-            console.log("main.js: Applied 'rave_mode' preset.");
-        } catch (error) {
-            console.error("main.js: Error applying preset:", error);
-        }
+        // PresetManager will auto-load saved default if one exists
+        // No need to apply a hardcoded preset here
+        console.log("main.js: Initialization complete. PresetManager will load saved default if available.");
     },
     (xhr) => {
         console.log((xhr.loaded / xhr.total * 100) + '% loaded');
