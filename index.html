@@ -5,10 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Visual Effects Test</title>
     <link rel="stylesheet" href="style.css">
-    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap" rel="stylesheet">
 </head>
 <body>
-    <div id="header-text">Cory&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Richard</div>
+    <!-- CLI Interface -->
+    <div id="cli-container">
+        <div id="cli-header">
+            <span id="cli-title">Laser CLI</span>
+            <button id="cli-toggle">−</button>
+        </div>
+        <div id="cli-content">
+            <div id="cli-output"></div>
+            <div id="cli-input-container">
+                <span id="cli-prompt">></span>
+                <input type="text" id="cli-input" placeholder="Type 'help' for commands">
+            </div>
+        </div>
+    </div>
+
     <script type="importmap">
         {
             "imports": {

@@ -24,12 +24,12 @@ export class BehaviorDefault {
         this.directions = [];
         this.targets = [];
         
-        // Remove camera tracking since origins will be static
-        // this.previousCameraPosition = new THREE.Vector3();
-        // this.previousCameraQuaternion = new THREE.Quaternion();
-        // this.stillnessTimer = 0;
-        // this.CAMERA_ROTATION_THRESHOLD = THREE.MathUtils.degToRad(15);
-        // this.CAMERA_POSITION_THRESHOLD = 0.1;
+        // Camera tracking for jump logic
+        this.previousCameraPosition = new THREE.Vector3();
+        this.previousCameraQuaternion = new THREE.Quaternion();
+        this.stillnessTimer = 0;
+        this.CAMERA_ROTATION_THRESHOLD = THREE.MathUtils.degToRad(15);
+        this.CAMERA_POSITION_THRESHOLD = 0.1;
     }
     
     init(laserSystem) {
@@ -62,19 +62,19 @@ export class BehaviorDefault {
         const controls = laserSystem.getControls();
         const targetCenter = controls ? controls.target : new THREE.Vector3();
         
-        // Set random origins on sphere - THESE WILL REMAIN STATIC
+        // Set random origins on sphere
         for (let i = 0; i < 4; i++) {
             this.origins[i] = getRandomPointOnSphere(targetCenter, this.ORIGIN_SPHERE_RADIUS);
             this.targets[i].copy(fixedTarget);
             this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
         }
         
-        console.log("BehaviorDefault: Initialized default behavior with 4 lasers at static origins");
+        console.log("BehaviorDefault: Initialized default behavior with 4 lasers");
     }
     
     update(deltaTime, clock, laserSystem) {
-        // Remove camera stillness detection and jumping
-        // this._handleCameraMovement(deltaTime, laserSystem);
+        // Handle camera stillness detection and jumping (if needed)
+        this._handleCameraMovement(deltaTime, laserSystem);
         
         // Update pulsing
         this._updatePulsing(clock);
@@ -83,16 +83,41 @@ export class BehaviorDefault {
         this._updateLaserGeometry(laserSystem);
     }
     
-    // Remove the camera movement handling methods
-    /*
     _handleCameraMovement(deltaTime, laserSystem) {
-        // REMOVED - no longer needed for static origins
+        const camera = laserSystem.getCamera();
+        if (!camera) return;
+        
+        const currentCameraPosition = camera.position.clone();
+        const currentCameraQuaternion = camera.quaternion.clone();
+        
+        const positionChanged = currentCameraPosition.distanceTo(this.previousCameraPosition) > this.CAMERA_POSITION_THRESHOLD;
+        const rotationChanged = this.previousCameraQuaternion.angleTo(currentCameraQuaternion) > this.CAMERA_ROTATION_THRESHOLD;
+        
+        if (positionChanged || rotationChanged) {
+            this.stillnessTimer = 0;
+            this.previousCameraPosition.copy(currentCameraPosition);
+            this.previousCameraQuaternion.copy(currentCameraQuaternion);
+        } else {
+            this.stillnessTimer += deltaTime;
+            
+            if (this.stillnessTimer >= this.STILLNESS_LIMIT) {
+                this._jumpLasers(laserSystem);
+                this.stillnessTimer = 0;
+            }
+        }
     }
     
     _jumpLasers(laserSystem) {
-        // REMOVED - no longer needed for static origins
+        const controls = laserSystem.getControls();
+        const targetCenter = controls ? controls.target : new THREE.Vector3();
+        const fixedTarget = new THREE.Vector3(0, 0, 0); // Always target (0,0,0)
+        
+        for (let i = 0; i < 4; i++) {
+            this.origins[i] = getRandomPointOnSphere(targetCenter, this.ORIGIN_SPHERE_RADIUS);
+            this.targets[i].copy(fixedTarget); // Ensure targets remain at (0,0,0)
+            this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
+        }
     }
-    */
     
     _updatePulsing(clock) {
         const currentPulseFrequency = this.BASE_PULSE_FREQUENCY;
