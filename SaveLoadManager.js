@@ -1,11 +1,13 @@
 // SaveLoadManager.js
 // Simple save/load system for laser configurations
 
+import { behaviors, savedBehaviorConfigs } from './behaviors/behaviors.js';
+import { banks, savedBankConfigs } from './banks.js';
+
 export class SaveLoadManager {
     constructor() {
-        this.savedBehaviors = new Map();
-        this.savedBanks = new Map();
-        this.loadDefaultConfigs();
+        this.savedBehaviors = new Map(Object.entries(savedBehaviorConfigs));
+        this.savedBanks = new Map(Object.entries(savedBankConfigs));
     }
 
     // ====== BEHAVIOR MANAGEMENT ======
@@ -155,26 +157,6 @@ export class SaveLoadManager {
         const names = Array.from(this.savedBanks.keys());
         console.log(`📁 Banks: [${names.join(', ')}]`);
     }
-
-    /**
-     * Load default configurations from existing banks.js
-     */
-    loadDefaultConfigs() {
-        // Save some default behavior configurations
-        this.saveBehavior('red_default', { laserColor: 0xff0000 });
-        this.saveBehavior('green_lasers', { laserColor: 0x00ff00 });
-        this.saveBehavior('blue_bounce', { laserColor: 0x0000ff, MAX_BOUNCES: 5 });
-        this.saveBehavior('yellow_wide', { laserColor: 0xffff00, ORIGIN_SPHERE_RADIUS: 15 });
-
-        // Save some default banks
-        this.saveBank('rave_mode', ['red_default']);
-        this.saveBank('chill_mode', ['green_lasers']);
-        this.saveBank('chaos_mode', ['red_default', 'green_lasers', 'blue_bounce']);
-        
-        console.log("✅ Loaded default configurations");
-    }
-
-    // ====== EXPORT/IMPORT (for future file persistence) ======
 
     /**
      * Export all configurations as JSON

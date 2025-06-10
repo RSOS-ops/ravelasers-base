@@ -1,7 +1,6 @@
 import * as THREE from 'three';
-import { getRandomPointOnSphere, getRandomTargetVertex } from './LaserSystem.js';
+import { getRandomPointOnSphere, getRandomTargetVertex } from '../LaserSystem.js';
 
-// BEHAVIOR 1: Default (4 lasers targeting center)
 export class BehaviorDefault {
     constructor(config = {}) {
         this.id = 'default';
@@ -186,9 +185,3 @@ export class BehaviorDefault {
         console.log('BehaviorDefault: Cleaned up default behavior');
     }
 }
-
-// Export behaviors object for banks.js to use
-export const behaviors = {
-    default: (config = {}) => new BehaviorDefault(config),
-    // Add other behavior factory functions as you create them
-};

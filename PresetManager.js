@@ -1,6 +1,6 @@
 // PresetManager.js
 import { banks } from './banks.js';
-import { behaviors } from './behaviors.js';
+import { behaviors } from './behaviors/behaviors.js';
 import { SaveLoadManager } from './SaveLoadManager.js';
 
 export class PresetManager {

@@ -29,37 +29,101 @@ export class LaserSystem {
         this.model = model;
         this.controls = controls;
         this.camera = camera;
+        this.lasers = [];
+        this.modelVertices = []; // Store all model vertices
         
-        // Core infrastructure only
-        this.activeBehaviors = [];
-        this.modelVertices = [];
-        this.raycaster = new THREE.Raycaster();
-        this.interactiveObjects = [];
-        
-        if (this.model) {
-            this.interactiveObjects.push(this.model);
-        }
-        
-        this._extractModelVertices();
+        // Extract vertices from the model
+        this.extractModelVertices();
     }
 
-    _extractModelVertices() {
+    extractModelVertices() {
         if (!this.model) return;
-        this.model.updateMatrixWorld(true);
+        
+        this.modelVertices = [];
+        
         this.model.traverse((child) => {
-            if (child.isMesh) {
-                const positions = child.geometry.attributes.position;
-                const worldMatrix = child.matrixWorld;
-                for (let i = 0; i < positions.count; i++) {
-                    const localVertex = new THREE.Vector3().fromBufferAttribute(positions, i);
-                    const worldVertex = localVertex.applyMatrix4(worldMatrix);
-                    this.modelVertices.push(worldVertex);
+            if (child.isMesh && child.geometry) {
+                const geometry = child.geometry;
+                const positionAttribute = geometry.attributes.position;
+                
+                if (positionAttribute) {
+                    // Get world matrix for proper vertex positioning
+                    child.updateMatrixWorld();
+                    
+                    for (let i = 0; i < positionAttribute.count; i++) {
+                        const vertex = new THREE.Vector3();
+                        vertex.fromBufferAttribute(positionAttribute, i);
+                        
+                        // Transform vertex to world coordinates
+                        vertex.applyMatrix4(child.matrixWorld);
+                        
+                        this.modelVertices.push(vertex.clone());
+                    }
                 }
             }
         });
-        console.log('LaserSystem: Extracted ' + this.modelVertices.length + ' vertices.');
+        
+        console.log(`✅ Extracted ${this.modelVertices.length} vertices from model`);
     }
 
+    getRandomModelVertex() {
+        if (this.modelVertices.length === 0) {
+            console.warn("No model vertices available, using origin");
+            return new THREE.Vector3(0, 0, 0);
+        }
+        
+        const randomIndex = Math.floor(Math.random() * this.modelVertices.length);
+        return this.modelVertices[randomIndex].clone();
+    }
+
+    createLaser(config) {
+        // ...existing laser creation code...
+        
+        // Set random target vertex
+        const targetVertex = this.getRandomModelVertex();
+        laser.targetPosition = targetVertex;
+        
+        // If using line geometry, update the line to point to the vertex
+        if (laser.line && laser.line.geometry) {
+            const positions = laser.line.geometry.attributes.position.array;
+            positions[3] = targetVertex.x; // End point X
+            positions[4] = targetVertex.y; // End point Y
+            positions[5] = targetVertex.z; // End point Z
+            laser.line.geometry.attributes.position.needsUpdate = true;
+        }
+        
+        // ...rest of laser creation...
+    }
+
+    // Method to retarget a laser to a new random vertex
+    retargetLaser(laser) {
+        const newTarget = this.getRandomModelVertex();
+        laser.targetPosition = newTarget;
+        
+        // Update line geometry if it exists
+        if (laser.line && laser.line.geometry) {
+            const positions = laser.line.geometry.attributes.position.array;
+            positions[3] = newTarget.x;
+            positions[4] = newTarget.y;
+            positions[5] = newTarget.z;
+            laser.line.geometry.attributes.position.needsUpdate = true;
+        }
+        
+        console.log(`🎯 Laser retargeted to vertex: (${newTarget.x.toFixed(2)}, ${newTarget.y.toFixed(2)}, ${newTarget.z.toFixed(2)})`);
+    }
+
+    // Call this when lasers change origin or need new targets
+    updateLaserTargets() {
+        this.lasers.forEach(laser => {
+            this.retargetLaser(laser);
+        });
+    }
+
+    // Core infrastructure only
+    activeBehaviors = [];
+    raycaster = new THREE.Raycaster();
+    interactiveObjects = [];
+    
     // Controller methods for managing behaviors
     addBehavior(behavior) {
         this.activeBehaviors.push(behavior);

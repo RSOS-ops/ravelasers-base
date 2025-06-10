@@ -61,6 +61,16 @@ export class CLI {
                 usage: 'clear',
                 execute: () => this.clearOutput()
             },
+            'helpers-on': {
+                description: 'Turn on all lighting helpers',
+                usage: 'helpers-on',
+                execute: () => this.setLightHelpers(true)
+            },
+            'helpers-off': {
+                description: 'Turn off all lighting helpers',
+                usage: 'helpers-off',
+                execute: () => this.setLightHelpers(false)
+            },
             save: {
                 description: 'Save a behavior configuration',
                 usage: 'save <name> <color> [bounces] [radius]',
@@ -447,5 +457,37 @@ export class CLI {
             content.style.display = 'block';
             this.input.focus();
         }
+    }
+
+    setLightHelpers(visibility) {
+        if (!window.scene) {
+            this.addOutput('Scene not available!', 'error');
+            return;
+        }
+
+        const scene = window.scene;
+        
+        // Find all light helpers in the scene
+        const helpers = [];
+        scene.traverse((object) => {
+            if (object.type === 'DirectionalLightHelper' || 
+                object.type === 'SpotLightHelper' || 
+                object.type === 'PointLightHelper') {
+                helpers.push(object);
+            }
+        });
+
+        if (helpers.length === 0) {
+            this.addOutput('No light helpers found in scene.', 'info');
+            return;
+        }
+
+        // Apply visibility to all helpers
+        helpers.forEach(helper => {
+            helper.visible = visibility;
+        });
+
+        const status = visibility ? 'ON' : 'OFF';
+        this.addOutput(`💡 Light helpers turned ${status} (${helpers.length} helpers)`, 'result');
     }
 }

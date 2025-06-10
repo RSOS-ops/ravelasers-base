@@ -11,6 +11,9 @@ import { LaserFactory } from './LaserFactory.js'; // Import LaserFactory
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x000000);
 
+// Make scene globally accessible for CLI
+window.scene = scene;
+
 // Clock for animation timing
 const clock = new THREE.Clock();
 
@@ -258,18 +261,12 @@ const modelUrl = './models/wirehead.glb';
 
 gltfLoader.load(
     modelUrl,
-    async (gltf) => { // Made this callback async to use await for preset loading
+    async (gltf) => {
         model = gltf.scene;
-        scene.add(model); // Add model to the scene here
+        scene.add(model);
 
-        // ---MODIFIED ORDER---
-        // 1. Adjust camera to the original model size first.
         adjustCameraForModel(); 
-
-        // 2. Then scale the model. Camera position is now fixed.
         model.scale.set(.75, .75, .75); 
-        
-        // Rotate the model 48 degrees on the y-axis
         model.rotation.y = THREE.MathUtils.degToRad(48);
         
         // Target directional light at the model center
@@ -308,7 +305,12 @@ gltfLoader.load(
         });
         
         // Laser System Initialization
-        laserSystem = new LaserSystem(scene, model, controls, camera); // model is now scaled
+        laserSystem = new LaserSystem(scene, model, controls, camera);
+        
+        // Re-extract vertices after scaling and rotation
+        laserSystem.extractModelVertices();
+        
+        // NEW: PresetManager and LaserFactory initialization
         presetManager = new PresetManager(laserSystem);
         laserFactory = new LaserFactory(presetManager);
         
