@@ -161,16 +161,22 @@ Apply quick test presets for rapid prototyping
 ## Scene Helpers
 
 ### `helpers-on`
-Turn on light helpers for debugging
+Turn on light helpers for debugging (persistent across reloads)
 ```
 > helpers-on
 ```
 
 ### `helpers-off`
-Turn off light helpers
+Turn off light helpers (persistent across reloads)
 ```
 > helpers-off
 ```
+
+**Helper Persistence:**
+- Helper visibility state is automatically saved to scene-default
+- Your helper preference (on/off) persists across page reloads
+- Use `status` command to see current helper state
+- Use `clear-all` to reset helper state along with other scene data
 
 ---
 

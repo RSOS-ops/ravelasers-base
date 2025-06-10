@@ -31,7 +31,8 @@ export class PresetManager {
         const defaultData = this.saveLoadManager.loadSavedDefault();
         if (!defaultData) {
             console.log('💡 No saved default found - starting with no lasers');
-            // Don't load any fallback - let the user choose what they want
+            // Still load helper state even if no default behaviors/banks
+            this.loadSceneDefaultHelpers();
             return;
         }
 
@@ -73,6 +74,9 @@ export class PresetManager {
             this.bank.current = defaultData.name;
             console.log(`✅ Auto-loaded default bank: "${defaultData.name}"`);
         }
+        
+        // Load helper state after loading behaviors/banks
+        this.loadSceneDefaultHelpers();
     }
 
     // ====== NEW SIMPLE METHODS ======
@@ -202,7 +206,7 @@ export class PresetManager {
         this.laserSystem.clearAllBehaviors();
         this.saveLoadManager.clearSceneDefault();
         this.bank.current = null;
-        console.log('🧹 Cleared all behaviors and scene-default');
+        console.log('🧹 Cleared all behaviors, scene-default, and helper state');
     }
 
     /**
@@ -218,6 +222,7 @@ export class PresetManager {
     showStatus() {
         const sceneDefault = this.saveLoadManager.getSceneDefault();
         const defaultSetting = this.saveLoadManager.getDefault();
+        const helpersVisible = this.saveLoadManager.getSceneDefaultHelpers();
 
         console.log('\n=== CURRENT STATUS ===');
         
@@ -235,6 +240,13 @@ export class PresetManager {
             console.log('📌 Default: None set');
         }
 
+        if (helpersVisible !== null) {
+            console.log(`💡 Light helpers: ${helpersVisible ? 'ON' : 'OFF'}`);
+            console.log('  (Persistent across reloads)');
+        } else {
+            console.log('💡 Light helpers: Not set');
+        }
+
         console.log('======================\n');
     }
 
@@ -243,6 +255,48 @@ export class PresetManager {
      */
     clearSceneDefault() {
         this.saveLoadManager.clearSceneDefault();
+    }
+
+    /**
+     * Load and apply the saved helper visibility state
+     */
+    loadSceneDefaultHelpers() {
+        const helpersVisible = this.saveLoadManager.getSceneDefaultHelpers();
+        if (helpersVisible !== null) {
+            // Apply the saved helper state
+            this.applyHelperVisibility(helpersVisible);
+            console.log(`🎬 Restored scene-default helpers: ${helpersVisible ? 'ON' : 'OFF'}`);
+        }
+    }
+
+    /**
+     * Apply helper visibility to the scene
+     * @param {boolean} visible - True to show helpers, false to hide them
+     */
+    applyHelperVisibility(visible) {
+        if (!window.scene) {
+            console.warn('Scene not available for helper visibility control');
+            return;
+        }
+
+        const scene = window.scene;
+        
+        // Find all light helpers in the scene
+        const helpers = [];
+        scene.traverse((object) => {
+            if (object.type === 'DirectionalLightHelper' || 
+                object.type === 'SpotLightHelper' || 
+                object.type === 'PointLightHelper') {
+                helpers.push(object);
+            }
+        });
+
+        // Apply visibility to all helpers
+        helpers.forEach(helper => {
+            helper.visible = visible;
+        });
+
+        console.log(`💡 Set ${helpers.length} light helpers visibility: ${visible ? 'ON' : 'OFF'}`);
     }
 
     // ====== LEGACY METHODS (for backward compatibility) ======

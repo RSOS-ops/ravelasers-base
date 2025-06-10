@@ -475,9 +475,7 @@ export class CLI {
             content.style.display = 'block';
             this.input.focus();
         }
-    }
-
-    setLightHelpers(visibility) {
+    }    setLightHelpers(visibility) {
         if (!window.scene) {
             this.addOutput('Scene not available!', 'error');
             return;
@@ -505,9 +503,16 @@ export class CLI {
             helper.visible = visibility;
         });
 
+        // Save the helper state to scene-default
+        if (this.presetManager) {
+            const saveLoadManager = this.presetManager.getSaveLoadManager();
+            saveLoadManager.setSceneDefaultHelpers(visibility);
+        }
+
         const status = visibility ? 'ON' : 'OFF';
         this.addOutput(`💡 Light helpers turned ${status} (${helpers.length} helpers)`, 'result');
-    }    manageDefault(args) {
+        this.addOutput('Helper state saved and will persist on reload', 'info');
+    }manageDefault(args) {
         if (!this.presetManager) {
             this.addOutput('PresetManager not available!', 'error');
             return;
@@ -554,9 +559,7 @@ export class CLI {
             this.addOutput('💡 No scene-default set', 'info');
             this.addOutput('Load any behavior or bank to set it as scene-default', 'info');
         }
-    }
-
-    showStatus() {
+    }    showStatus() {
         if (!this.presetManager) {
             this.addOutput('PresetManager not available!', 'error');
             return;
@@ -565,6 +568,7 @@ export class CLI {
         const saveLoadManager = this.presetManager.getSaveLoadManager();
         const sceneDefault = saveLoadManager.getSceneDefault();
         const defaultSetting = saveLoadManager.getDefault();
+        const helpersVisible = saveLoadManager.getSceneDefaultHelpers();
 
         this.addOutput('=== CURRENT STATUS ===', 'info');
         
@@ -580,6 +584,13 @@ export class CLI {
             this.addOutput('  (Fallback if no scene-default)', 'info');
         } else {
             this.addOutput('📌 Default: None set', 'info');
+        }
+
+        if (helpersVisible !== null) {
+            this.addOutput(`💡 Light helpers: ${helpersVisible ? 'ON' : 'OFF'}`, 'result');
+            this.addOutput('  (Persistent across reloads)', 'info');
+        } else {
+            this.addOutput('💡 Light helpers: Not set', 'info');
         }
 
         this.addOutput('======================', 'info');

@@ -75,10 +75,24 @@ presetManager.clearAll()
 ### CLI Workflow
 ```
 > load-behavior red_default      # Scene-default set automatically
-> status                         # Check current state
+> helpers-on                     # Helper state saved to scene-default
+> status                         # Check current state (shows helpers: ON)
 > load-bank chaos_mode           # Scene-default updated automatically
 > scene                          # Shows current scene-default
-> clear-all                      # Fresh start
+> clear-all                      # Fresh start (clears helpers too)
+```
+
+### Helper Persistence Example
+```
+> helpers-on                     # Turn on helpers and save state
+> status                         # Shows "Light helpers: ON"
+# Page reload → helpers automatically restored to ON
+
+> helpers-off                    # Turn off helpers and save state  
+# Page reload → helpers automatically restored to OFF
+
+> clear-all                      # Reset everything including helper state
+# Page reload → helpers back to default (not set)
 ```
 
 ## Benefits
@@ -88,16 +102,19 @@ presetManager.clearAll()
 3. **Persistent**: Survives page reloads and application restarts
 4. **Flexible**: Easy to clear for fresh starts
 5. **Hierarchical**: Scene-default → Regular default → Nothing
+6. **Complete**: Includes behaviors, banks, and UI state (like helper visibility)
 
 ## Technical Details
 
 ### Storage
 - Scene-defaults are stored in browser localStorage
-- Keys: `ravelasers_scene_default_behavior`, `ravelasers_scene_default_bank`, `ravelasers_scene_default_type`
+- Keys: `ravelasers_scene_default_behavior`, `ravelasers_scene_default_bank`, `ravelasers_scene_default_type`, `ravelasers_scene_default_helpers`
 - Automatically cleared if referenced behavior/bank no longer exists
+- Helper visibility state persists independently of behaviors/banks
 
 ### Integration
 - Automatically called by `PresetManager.loadBehavior()` and `PresetManager.loadBank()`
+- Helper state automatically saved by CLI `helpers-on`/`helpers-off` commands
 - Checked during startup in `PresetManager.loadSavedDefault()`
 - CLI commands provide easy access and management
 

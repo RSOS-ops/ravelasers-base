@@ -55,20 +55,18 @@ export class BehaviorWireframe {
             this.targets.push(new THREE.Vector3());
         }
     }
-    
-    _initializeLaserPositions(laserSystem) {
-        const fixedTarget = new THREE.Vector3(0, 0, 0);
+      _initializeLaserPositions(laserSystem) {
         const controls = laserSystem.getControls();
         const targetCenter = controls ? controls.target : new THREE.Vector3();
         
-        // Set random origins on sphere
+        // Set random origins on sphere and random vertex targets
         for (let i = 0; i < 4; i++) {
             this.origins[i] = getRandomPointOnSphere(targetCenter, this.ORIGIN_SPHERE_RADIUS);
-            this.targets[i].copy(fixedTarget);
+            this.targets[i] = this._getRandomModelVertex(laserSystem);
             this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
         }
         
-        console.log("BehaviorWireframe: Initialized wireframe behavior with 4 lasers");
+        console.log("BehaviorWireframe: Initialized wireframe behavior with 4 lasers targeting random vertices");
     }
     
     update(deltaTime, clock, laserSystem) {
@@ -105,15 +103,13 @@ export class BehaviorWireframe {
             }
         }
     }
-    
-    _jumpLasers(laserSystem) {
+      _jumpLasers(laserSystem) {
         const controls = laserSystem.getControls();
         const targetCenter = controls ? controls.target : new THREE.Vector3();
-        const fixedTarget = new THREE.Vector3(0, 0, 0); // Always target (0,0,0)
         
         for (let i = 0; i < 4; i++) {
             this.origins[i] = getRandomPointOnSphere(targetCenter, this.ORIGIN_SPHERE_RADIUS);
-            this.targets[i].copy(fixedTarget); // Ensure targets remain at (0,0,0)
+            this.targets[i] = this._getRandomModelVertex(laserSystem);
             this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
         }
     }
@@ -174,6 +170,18 @@ export class BehaviorWireframe {
         laserLine.geometry.attributes.position.needsUpdate = true;
     }
     
+    _getRandomModelVertex(laserSystem) {
+        // Try to get a random vertex from the loaded model
+        const vertex = laserSystem.getRandomModelVertex();
+        if (vertex) {
+            return vertex;
+        }
+        
+        // Fallback to center if no model vertices available
+        console.warn("BehaviorWireframe: No model vertices available, using center (0,0,0)");
+        return new THREE.Vector3(0, 0, 0);
+    }
+
     cleanup(laserSystem) {
         const scene = laserSystem.getScene();
         this.laserLines.forEach(line => scene.remove(line));

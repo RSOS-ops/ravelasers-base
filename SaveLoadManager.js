@@ -12,11 +12,11 @@ export class SaveLoadManager {    constructor() {
         this.DEFAULT_BEHAVIOR_KEY = 'ravelasers_default_behavior';
         this.DEFAULT_BANK_KEY = 'ravelasers_default_bank';
         this.DEFAULT_TYPE_KEY = 'ravelasers_default_type'; // 'behavior' or 'bank'
-        
-        // Scene-default persistence keys (for current session state)
+          // Scene-default persistence keys (for current session state)
         this.SCENE_DEFAULT_BEHAVIOR_KEY = 'ravelasers_scene_default_behavior';
         this.SCENE_DEFAULT_BANK_KEY = 'ravelasers_scene_default_bank';
         this.SCENE_DEFAULT_TYPE_KEY = 'ravelasers_scene_default_type'; // 'behavior' or 'bank'
+        this.SCENE_DEFAULT_HELPERS_KEY = 'ravelasers_scene_default_helpers'; // true/false for helper visibility
     }
 
     // ====== BEHAVIOR MANAGEMENT ======
@@ -313,9 +313,7 @@ export class SaveLoadManager {    constructor() {
             console.warn('Failed to read scene-default from localStorage:', error);
         }
         return null;
-    }
-
-    /**
+    }    /**
      * Clear the scene-default setting
      */
     clearSceneDefault() {
@@ -323,11 +321,41 @@ export class SaveLoadManager {    constructor() {
             localStorage.removeItem(this.SCENE_DEFAULT_BEHAVIOR_KEY);
             localStorage.removeItem(this.SCENE_DEFAULT_BANK_KEY);
             localStorage.removeItem(this.SCENE_DEFAULT_TYPE_KEY);
+            localStorage.removeItem(this.SCENE_DEFAULT_HELPERS_KEY);
             console.log('🗑️ Cleared scene-default setting');
         } catch (error) {
             console.warn('Failed to clear scene-default from localStorage:', error);
         }
-    }    /**
+    }
+
+    /**
+     * Set the helper visibility state (automatically called when changing helper visibility)
+     * @param {boolean} visible - True if helpers should be visible, false otherwise
+     */
+    setSceneDefaultHelpers(visible) {
+        try {
+            localStorage.setItem(this.SCENE_DEFAULT_HELPERS_KEY, visible.toString());
+            console.log(`🎬 Set scene-default helpers: ${visible ? 'ON' : 'OFF'}`);
+        } catch (error) {
+            console.warn('Failed to save scene-default helpers to localStorage:', error);
+        }
+    }
+
+    /**
+     * Get the scene-default helper visibility state
+     * @returns {boolean|null} - True if helpers should be visible, false if hidden, null if not set
+     */
+    getSceneDefaultHelpers() {
+        try {
+            const helpersState = localStorage.getItem(this.SCENE_DEFAULT_HELPERS_KEY);
+            if (helpersState !== null) {
+                return helpersState === 'true';
+            }
+        } catch (error) {
+            console.warn('Failed to read scene-default helpers from localStorage:', error);
+        }
+        return null;
+    }/**
      * Load the saved default (called on startup)
      * Prioritizes scene-default (current session state) over regular default
      * @returns {object|false} - Default data object or false if none found
