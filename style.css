@@ -127,6 +127,7 @@ canvas {
     width: 120px;
     height: 40px;
     padding: 8px 15px;
+    opacity: 0.2; /*.2= 80% transparent */
 }
 
 #cli-container.collapsed #cli-content {

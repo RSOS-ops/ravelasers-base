@@ -46,9 +46,7 @@ export class CLI {
     setPresetManager(presetManager) {
         this.presetManager = presetManager;
         this.addOutput('✅ PresetManager connected!', 'info');
-    }
-
-    setupCommands() {
+    }    setupCommands() {
         this.commands = {
             help: {
                 description: 'Show available commands',
@@ -65,15 +63,20 @@ export class CLI {
                 usage: 'save <name> <color> [bounces] [radius]',
                 execute: (args) => this.saveBehavior(args)
             },
-            load: {
+            'load-behavior': {
                 description: 'Load a behavior',
-                usage: 'load <name>',
+                usage: 'load-behavior <name>',
                 execute: (args) => this.loadBehavior(args)
             },
-            bank: {
-                description: 'Bank operations (save/load)',
-                usage: 'bank save <name> <behavior1> [behavior2] ... | bank load <name>',
-                execute: (args) => this.bankOperation(args)
+            'load-bank': {
+                description: 'Load a bank',
+                usage: 'load-bank <name>',
+                execute: (args) => this.loadBank(args)
+            },
+            'save-bank': {
+                description: 'Save a bank with behaviors',
+                usage: 'save-bank <name> <behavior1> [behavior2] ...',
+                execute: (args) => this.saveBank(args)
             },
             list: {
                 description: 'List saved behaviors or banks',
@@ -202,16 +205,14 @@ export class CLI {
         } catch (error) {
             this.addOutput(`Error saving behavior: ${error.message}`, 'error');
         }
-    }
-
-    loadBehavior(args) {
+    }    loadBehavior(args) {
         if (!this.presetManager) {
             this.addOutput('PresetManager not available!', 'error');
             return;
         }
 
         if (args.length < 1) {
-            this.addOutput('Usage: load <name>', 'error');
+            this.addOutput('Usage: load-behavior <name>', 'error');
             return;
         }
 
@@ -223,40 +224,42 @@ export class CLI {
         }
     }
 
-    bankOperation(args) {
+    loadBank(args) {
+        if (!this.presetManager) {
+            this.addOutput('PresetManager not available!', 'error');
+            return;
+        }
+
+        if (args.length < 1) {
+            this.addOutput('Usage: load-bank <name>', 'error');
+            return;
+        }
+
+        const name = args[0];
+        if (this.presetManager.loadBank(name)) {
+            this.addOutput(`✅ Loaded bank: ${name}`, 'result');
+        } else {
+            this.addOutput(`❌ Failed to load bank: ${name}`, 'error');
+        }
+    }
+
+    saveBank(args) {
         if (!this.presetManager) {
             this.addOutput('PresetManager not available!', 'error');
             return;
         }
 
         if (args.length < 2) {
-            this.addOutput('Usage: bank save <name> <behavior1> [behavior2] ...', 'error');
-            this.addOutput('       bank load <name>', 'error');
+            this.addOutput('Usage: save-bank <name> <behavior1> [behavior2] ...', 'error');
+            this.addOutput('Example: save-bank my_mix red_default green_lasers', 'info');
             return;
         }
 
-        const operation = args[0].toLowerCase();
-        const bankName = args[1];
-
-        if (operation === 'save') {
-            if (args.length < 3) {
-                this.addOutput('Need at least one behavior name!', 'error');
-                return;
-            }
-            const behaviorNames = args.slice(2);
-            if (this.presetManager.saveBank(bankName, behaviorNames)) {
-                this.addOutput(`✅ Saved bank: ${bankName}`, 'result');
-            } else {
-                this.addOutput(`❌ Failed to save bank: ${bankName}`, 'error');
-            }
-        } else if (operation === 'load') {
-            if (this.presetManager.loadBank(bankName)) {
-                this.addOutput(`✅ Loaded bank: ${bankName}`, 'result');
-            } else {
-                this.addOutput(`❌ Failed to load bank: ${bankName}`, 'error');
-            }
+        const [bankName, ...behaviorNames] = args;
+        if (this.presetManager.saveBank(bankName, behaviorNames)) {
+            this.addOutput(`✅ Saved bank: ${bankName}`, 'result');
         } else {
-            this.addOutput('Unknown bank operation. Use "save" or "load".', 'error');
+            this.addOutput(`❌ Failed to save bank: ${bankName}`, 'error');
         }
     }
 
