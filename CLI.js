@@ -6,9 +6,9 @@ export class CLI {
         this.input = null;
         this.container = null;
         this.commandHistory = [];
-        this.historyIndex = -1;
-        this.commands = {};
+        this.historyIndex = -1;        this.commands = {};
         this.presetManager = null;
+        this.laserFactory = null;
         
         this.setupCommands();
         this.init();
@@ -41,12 +41,15 @@ export class CLI {
         // Welcome message
         this.addOutput('🚀 Laser CLI Ready! Type "help" for commands.', 'info');
         this.addOutput('Use arrow keys for command history.', 'info');
-    }
-
-    setPresetManager(presetManager) {
+    }    setPresetManager(presetManager) {
         this.presetManager = presetManager;
         this.addOutput('✅ PresetManager connected!', 'info');
-    }    setupCommands() {
+    }
+
+    setLaserFactory(laserFactory) {
+        this.laserFactory = laserFactory;
+        this.addOutput('✅ LaserFactory connected!', 'info');
+    }setupCommands() {
         this.commands = {
             help: {
                 description: 'Show available commands',
@@ -92,11 +95,25 @@ export class CLI {
                 description: 'Load a preset (legacy)',
                 usage: 'preset <rave_mode|chill_mode|chaos_mode>',
                 execute: (args) => this.loadPreset(args)
-            },
-            colors: {
+            },            colors: {
                 description: 'Show color examples',
                 usage: 'colors',
                 execute: () => this.showColors()
+            },
+            test: {
+                description: 'Test a laser configuration',
+                usage: 'test <preset> or test <color> [bounces] [radius]',
+                execute: (args) => this.testConfiguration(args)
+            },
+            quick: {
+                description: 'Quick test presets',
+                usage: 'quick <fast|slow|bouncy|wide|fire|ice|chaos|zen>',
+                execute: (args) => this.quickTest(args)
+            },
+            factory: {
+                description: 'Show factory help',
+                usage: 'factory',
+                execute: () => this.showFactoryHelp()
             }
         };
     }
@@ -340,9 +357,7 @@ export class CLI {
         } catch (error) {
             this.addOutput(`❌ Failed to apply preset: ${presetName}`, 'error');
         }
-    }
-
-    showColors() {
+    }    showColors() {
         this.addOutput('Common laser colors:', 'info');
         this.addOutput('  Red:     0xff0000', 'result');
         this.addOutput('  Green:   0x00ff00', 'result');
@@ -354,6 +369,69 @@ export class CLI {
         this.addOutput('  Orange:  0xff8000', 'result');
         this.addOutput('  Purple:  0x8000ff', 'result');
         this.addOutput('  Pink:    0xff0080', 'result');
+    }
+
+    testConfiguration(args) {
+        if (!this.laserFactory) {
+            this.addOutput('LaserFactory not available!', 'error');
+            return;
+        }
+
+        if (args.length === 0) {
+            this.addOutput('Usage: test <color> [bounces] [radius]', 'error');
+            this.addOutput('Example: test 0x00ff00 5 15', 'info');
+            return;
+        }
+
+        try {
+            const [colorStr, bouncesStr, radiusStr] = args;
+            const config = {
+                laserColor: parseInt(colorStr, 16)
+            };
+
+            if (bouncesStr) config.MAX_BOUNCES = parseInt(bouncesStr);
+            if (radiusStr) config.ORIGIN_SPHERE_RADIUS = parseInt(radiusStr);
+
+            this.laserFactory.test(config, 'cli_test');
+            this.addOutput('✅ Test configuration applied!', 'result');
+            this.addOutput('Use console: factory.save("cli_test") to save', 'info');
+        } catch (error) {
+            this.addOutput(`Error testing configuration: ${error.message}`, 'error');
+        }
+    }
+
+    quickTest(args) {
+        if (!this.laserFactory) {
+            this.addOutput('LaserFactory not available!', 'error');
+            return;
+        }
+
+        if (args.length === 0) {
+            this.addOutput('Usage: quick <preset>', 'error');
+            this.addOutput('Presets: fast, slow, bouncy, wide, fire, ice, chaos, zen', 'info');
+            return;
+        }
+
+        const preset = args[0];
+        try {
+            this.laserFactory.quickTest(preset);
+            this.addOutput(`✅ Applied quick test: ${preset}`, 'result');
+        } catch (error) {
+            this.addOutput(`Error with quick test: ${error.message}`, 'error');
+        }
+    }
+
+    showFactoryHelp() {
+        this.addOutput('🏭 LaserFactory Console Commands:', 'info');
+        this.addOutput('  factory.quickTest("fast")  - Test fast lasers', 'result');
+        this.addOutput('  factory.quickTest("chaos") - Test chaotic setup', 'result');
+        this.addOutput('  factory.showColors()       - Show color palette', 'result');
+        this.addOutput('  factory.create({color: 0xff0000, bounces: 5})', 'result');
+        this.addOutput('  factory.save()             - Save current test', 'result');
+        this.addOutput('  factory.listTests()        - Show all tests', 'result');
+        this.addOutput('', 'result');
+        this.addOutput('Use CLI commands for simple testing:', 'info');
+        this.addOutput('  quick fast, quick chaos, test 0xff0000 5 15', 'result');
     }
 
     toggleCLI() {

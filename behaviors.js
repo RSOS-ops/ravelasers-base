@@ -8,7 +8,7 @@ export class BehaviorDefault {
         
         // All the parameters that were in LaserSystem
         this.ORIGIN_SPHERE_RADIUS = config.ORIGIN_SPHERE_RADIUS || 10;
-        this.STILLNESS_LIMIT = config.STILLNESS_LIMIT || 0.16666666666666666;
+        this.STILLNESS_LIMIT = config.STILLNESS_LIMIT || 0.08333333333333333; // 2x faster laser origin changes
         this.BASE_PULSE_FREQUENCY = config.BASE_PULSE_FREQUENCY || 0.5;
         this.PULSE_FREQUENCY_SENSITIVITY = config.PULSE_FREQUENCY_SENSITIVITY || 5.0;
         this.MIN_BRIGHTNESS = config.MIN_BRIGHTNESS || 0.3;
