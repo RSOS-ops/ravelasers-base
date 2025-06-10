@@ -5,6 +5,7 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LaserSystem } from './LaserSystem.js'; // Import LaserSystem
 import { PresetManager } from './PresetManager.js'; // Import PresetManager
 import { CLI } from './CLI.js'; // Import CLI
+import { LaserFactory } from './LaserFactory.js'; // Import LaserFactory
 
 // Scene Setup
 const scene = new THREE.Scene();
@@ -86,9 +87,10 @@ spotLightFace.decay = 0.5;
 // Model Setup & Loading
 let model; // This will hold the loaded GLTF scene
 
-// NEW: LaserSystem and PresetManager instances
+// NEW: LaserSystem, PresetManager, and LaserFactory instances
 let laserSystem;
 let presetManager;
+let laserFactory;
 
 function adjustCameraForModel() {
     if (!model) return;
@@ -239,17 +241,23 @@ gltfLoader.load(
         // Laser System Initialization
         laserSystem = new LaserSystem(scene, model, controls, camera); // model is now scaled
         presetManager = new PresetManager(laserSystem);
+        laserFactory = new LaserFactory(presetManager);
         
-        // Make presetManager globally accessible for console use
+        // Make presetManager and laserFactory globally accessible for console use
         window.presetManager = presetManager;
         window.laserSystem = laserSystem; // Also expose laserSystem for advanced use
+        window.factory = laserFactory; // Short alias for easier console use
+        window.laserFactory = laserFactory; // Full name also available
         
-        // Connect CLI to presetManager
+        // Connect CLI to presetManager and laserFactory
         cli.setPresetManager(presetManager);
+        cli.setLaserFactory(laserFactory);
         
-        console.log("✅ presetManager and laserSystem are now available in console!");
+        console.log("✅ presetManager, laserSystem, and laserFactory are now available in console!");
         console.log("✅ CLI is ready! Use the interface on the left side of the screen.");
-        console.log("Try: presetManager.showSaved()");
+        console.log("✅ LaserFactory ready! Use 'factory' in console for dynamic testing.");
+        console.log("Try: factory.quickTest('fast') or factory.showColors()");
+        console.log("Or: presetManager.showSaved()");
         
         // Apply default bank
         try {
