@@ -472,10 +472,11 @@ export class CLI {
             content.style.display = 'none';
         } else {
             toggle.textContent = '−';
-            content.style.display = 'block';
-            this.input.focus();
+            content.style.display = 'block';        this.input.focus();
         }
-    }    setLightHelpers(visibility) {
+    }
+
+    setLightHelpers(visibility) {
         if (!window.scene) {
             this.addOutput('Scene not available!', 'error');
             return;
@@ -510,9 +511,10 @@ export class CLI {
         }
 
         const status = visibility ? 'ON' : 'OFF';
-        this.addOutput(`💡 Light helpers turned ${status} (${helpers.length} helpers)`, 'result');
-        this.addOutput('Helper state saved and will persist on reload', 'info');
-    }manageDefault(args) {
+        this.addOutput(`💡 Light helpers turned ${status} (${helpers.length} helpers)`, 'result');        this.addOutput('Helper state saved and will persist on reload', 'info');
+    }
+
+    manageDefault(args) {
         if (!this.presetManager) {
             this.addOutput('PresetManager not available!', 'error');
             return;
@@ -557,9 +559,10 @@ export class CLI {
             this.addOutput('Use "scene clear" to clear the scene-default', 'info');
         } else {
             this.addOutput('💡 No scene-default set', 'info');
-            this.addOutput('Load any behavior or bank to set it as scene-default', 'info');
-        }
-    }    showStatus() {
+            this.addOutput('Load any behavior or bank to set it as scene-default', 'info');        }
+    }
+
+    showStatus() {
         if (!this.presetManager) {
             this.addOutput('PresetManager not available!', 'error');
             return;

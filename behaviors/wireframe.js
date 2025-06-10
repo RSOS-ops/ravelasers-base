@@ -7,7 +7,7 @@ export class BehaviorWireframe {
         
         // All the parameters that were in LaserSystem
         this.ORIGIN_SPHERE_RADIUS = config.ORIGIN_SPHERE_RADIUS || 10;
-        this.STILLNESS_LIMIT = config.STILLNESS_LIMIT || 0.08333333333333333; // 2x faster laser origin changes
+        this.STILLNESS_LIMIT = config.STILLNESS_LIMIT || 0.5; // 2x faster laser origin changes
         this.BASE_PULSE_FREQUENCY = config.BASE_PULSE_FREQUENCY || 0.5;
         this.PULSE_FREQUENCY_SENSITIVITY = config.PULSE_FREQUENCY_SENSITIVITY || 5.0;
         this.MIN_BRIGHTNESS = config.MIN_BRIGHTNESS || 0.3;
@@ -15,13 +15,13 @@ export class BehaviorWireframe {
         this.MAX_LENGTH = config.MAX_LENGTH || 20;
         this.MAX_BOUNCES = config.MAX_BOUNCES || 3;
         this.laserColor = new THREE.Color(config.laserColor || 0x00ff00); // Default to green for wireframe
-        
-        // Laser objects
+          // Laser objects
         this.laserLines = [];
         this.materials = [];
         this.origins = [];
         this.directions = [];
         this.targets = [];
+        this.targetFaces = []; // Store target face data for reflection
         
         // Camera tracking for jump logic
         this.previousCameraPosition = new THREE.Vector3();
@@ -54,19 +54,25 @@ export class BehaviorWireframe {
             this.directions.push(new THREE.Vector3(0, 0, -1));
             this.targets.push(new THREE.Vector3());
         }
-    }
-      _initializeLaserPositions(laserSystem) {
+    }      _initializeLaserPositions(laserSystem) {
         const controls = laserSystem.getControls();
         const targetCenter = controls ? controls.target : new THREE.Vector3();
         
-        // Set random origins on sphere and random vertex targets
+        // Set random origins on sphere and random face targets
         for (let i = 0; i < 4; i++) {
             this.origins[i] = getRandomPointOnSphere(targetCenter, this.ORIGIN_SPHERE_RADIUS);
-            this.targets[i] = this._getRandomModelVertex(laserSystem);
+            
+            // Get random face instead of vertex
+            const randomFace = this._getRandomModelFace(laserSystem);
+            this.targets[i] = randomFace.center.clone();
+            this.targetFaces[i] = randomFace;
+            
             this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
+            
+            console.log(`🎯 Laser ${i} targeting face center:`, this.targets[i], 'with normal:', randomFace.normal);
         }
         
-        console.log("BehaviorWireframe: Initialized wireframe behavior with 4 lasers targeting random vertices");
+        console.log("BehaviorWireframe: Initialized wireframe behavior with 4 lasers targeting random faces");
     }
     
     update(deltaTime, clock, laserSystem) {
@@ -102,15 +108,21 @@ export class BehaviorWireframe {
                 this.stillnessTimer = 0;
             }
         }
-    }
-      _jumpLasers(laserSystem) {
+    }      _jumpLasers(laserSystem) {
         const controls = laserSystem.getControls();
         const targetCenter = controls ? controls.target : new THREE.Vector3();
         
         for (let i = 0; i < 4; i++) {
             this.origins[i] = getRandomPointOnSphere(targetCenter, this.ORIGIN_SPHERE_RADIUS);
-            this.targets[i] = this._getRandomModelVertex(laserSystem);
+            
+            // Get random face instead of vertex
+            const randomFace = this._getRandomModelFace(laserSystem);
+            this.targets[i] = randomFace.center.clone();
+            this.targetFaces[i] = randomFace;
+            
             this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
+            
+            console.log(`🔄 Laser ${i} retargeted to face center:`, this.targets[i], 'with normal:', randomFace.normal);
         }
     }
     
@@ -169,20 +181,25 @@ export class BehaviorWireframe {
         laserLine.geometry.setFromPoints(points);
         laserLine.geometry.attributes.position.needsUpdate = true;
     }
-    
-    _getRandomModelVertex(laserSystem) {
-        // Try to get a random vertex from the loaded model
-        const vertex = laserSystem.getRandomModelVertex();
-        if (vertex) {
-            return vertex;
+      _getRandomModelFace(laserSystem) {
+        // Try to get a random face from the loaded model
+        const face = laserSystem.getRandomModelFace();
+        if (face) {
+            return face;
         }
         
-        // Fallback to center if no model vertices available
-        console.warn("BehaviorWireframe: No model vertices available, using center (0,0,0)");
-        return new THREE.Vector3(0, 0, 0);
-    }
-
-    cleanup(laserSystem) {
+        // Fallback to default face if no model faces available
+        console.warn("BehaviorWireframe: No model faces available, using default face");
+        return {
+            center: new THREE.Vector3(0, 0, 0),
+            normal: new THREE.Vector3(0, 1, 0),
+            vertices: [
+                new THREE.Vector3(-0.5, 0, -0.5),
+                new THREE.Vector3(0.5, 0, -0.5),
+                new THREE.Vector3(0, 0, 0.5)
+            ]
+        };
+    }    cleanup(laserSystem) {
         const scene = laserSystem.getScene();
         this.laserLines.forEach(line => scene.remove(line));
         this.laserLines = [];
@@ -190,6 +207,7 @@ export class BehaviorWireframe {
         this.origins = [];
         this.directions = [];
         this.targets = [];
+        this.targetFaces = [];
         console.log('BehaviorWireframe: Cleaned up wireframe behavior');
     }
 }

@@ -419,3 +419,39 @@ When using `save <n> <color> [bounces] [radius]`:
 - Use `helpers-on` to see light positions
 - Use `factory` for advanced console commands
 - Check browser console for technical errors
+
+---
+
+## 🎯 **Face-Based Laser Targeting System**
+
+### **WIREFRAME BEHAVIOR - Updated for Face Targeting**
+
+The wireframe behavior has been enhanced to target **random faces** on the model instead of vertices, providing more realistic laser interactions:
+
+#### **🔺 Face Targeting Features:**
+- **Random Face Selection**: Lasers target the center point of randomly selected triangular faces
+- **Face Normal Reflection**: Lasers reflect off the true surface normal of the targeted face
+- **Improved Realism**: More accurate lighting physics with face-based interactions
+- **Dynamic Retargeting**: Lasers retarget to new random faces when camera movement stops
+
+#### **🔧 Technical Implementation:**
+- `extractModelFaces()`: Extracts all triangular faces from loaded model geometry
+- `getRandomModelFace()`: Returns random face with center point, normal vector, and vertices
+- Face data includes:
+  - `center`: Vector3 position at face center
+  - `normal`: Vector3 surface normal for accurate reflection
+  - `vertices`: Array of 3 vertices defining the triangular face
+
+#### **🎮 Usage:**
+```
+> behavior wireframe
+🔥 Wireframe behavior activated with face targeting
+```
+
+#### **💡 Debug Information:**
+The wireframe behavior now logs detailed face targeting information:
+- Face center coordinates for each laser
+- Surface normal vectors for reflection calculations
+- Retargeting events when lasers jump to new faces
+
+---

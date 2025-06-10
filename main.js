@@ -65,7 +65,7 @@ const ambientLight = new THREE.AmbientLight(0xffffff, 0);
 scene.add(ambientLight);
 
 // Directional Light Setup
-const directionalLight = new THREE.DirectionalLight(0xffffff, .5);
+const directionalLight = new THREE.DirectionalLight(0xffffff, 47);
 directionalLight.position.set(2, .5, 3); // Position light from camera perspective
 directionalLight.castShadow = true; // Enable shadows
 directionalLight.shadow.mapSize.width = 2048;
@@ -83,12 +83,21 @@ scene.add(directionalLightTarget);
 directionalLight.target = directionalLightTarget;
 
 // Add lighting helpers
+// Check saved helper state to avoid flash
 const directionalLightHelper = new THREE.DirectionalLightHelper(directionalLight, .5);
+const savedHelperState = getSavedHelperVisibility();
+if (savedHelperState !== null) {
+    // Use saved state if it exists
+    directionalLightHelper.visible = savedHelperState;
+} else {
+    // Use default visibility (true for DirectionalLightHelper)
+    directionalLightHelper.visible = true;
+}
 scene.add(directionalLightHelper);
 
 // Spotlights (still managed in main.js as they are scene lighting, not laser effects)
-const spotLightDown = new THREE.SpotLight(0xffffff, 2);
-const spotLightFace = new THREE.SpotLight(0xffffff, 2);
+const spotLightDown = new THREE.SpotLight(0xffffff, 5);
+const spotLightFace = new THREE.SpotLight(0xffffff, 5);
 
 // Create flasher spotlight objects
 const flasher1 = new THREE.SpotLight(0xffffff, 3);
@@ -103,6 +112,17 @@ let model; // This will hold the loaded GLTF scene
 let laserSystem;
 let presetManager;
 let laserFactory;
+
+// Helper visibility function to avoid flash on startup
+function getSavedHelperVisibility() {
+    try {
+        const helpersState = localStorage.getItem('ravelasers_scene_default_helpers');
+        return helpersState !== null ? helpersState === 'true' : null; // Return null if not set
+    } catch (error) {
+        console.warn('Failed to read helper state:', error);
+        return null; // Return null on error
+    }
+}
 
 function adjustCameraForModel() {
     if (!model) return;
@@ -138,7 +158,7 @@ const spotlightConfig = {
         angle: Math.PI / 8 * .75,
         penumbra: 0.5,
         decay: 2,
-        showHelper: false
+        showHelper: true  // Enable helper
     },
     spotLightFace: {
         position: { x: 0, y: -1.2, z: 1.0 },
@@ -149,7 +169,7 @@ const spotlightConfig = {
         angle: Math.PI / 11.5 * 1.4,
         penumbra: 0.5,
         decay: 0.5,
-        showHelper: false
+        showHelper: true  // Enable helper
     },
     // New "Flashers" lighting system - 4 symmetrical spotlights
     flasher1: {
@@ -244,12 +264,18 @@ function setupSpotlights() {
             spotlight.target = target;
             scene.add(spotlight);
             
-            // Add helper if enabled
-            if (config.showHelper) {
-                const helper = new THREE.SpotLightHelper(spotlight);
-                scene.add(helper);
-                console.log(`✅ Helper added for ${lightKey} at position (${config.position.x}, ${config.position.y}, ${config.position.z})`);
+            // Always create helper for all spotlights (but control visibility)
+            const helper = new THREE.SpotLightHelper(spotlight);
+            const savedHelperState = getSavedHelperVisibility();
+            if (savedHelperState !== null) {
+                // Use saved state if it exists
+                helper.visible = savedHelperState;
+            } else {
+                // Use original config.showHelper setting as default
+                helper.visible = config.showHelper;
             }
+            scene.add(helper);
+            console.log(`✅ Helper added for ${lightKey} at position (${config.position.x}, ${config.position.y}, ${config.position.z})`);
         }
     });
     
@@ -257,7 +283,7 @@ function setupSpotlights() {
 }
 
 const gltfLoader = new GLTFLoader();
-const modelUrl = './models/wirehead-3-thicker.glb';
+const modelUrl = './models/cube-beveled-silver.glb';
 
 gltfLoader.load(
     modelUrl,
@@ -266,7 +292,7 @@ gltfLoader.load(
         scene.add(model);
 
         adjustCameraForModel(); 
-        model.scale.set(.75, .75, .75); 
+        model.scale.set(.5, .5, .5); 
         model.rotation.y = THREE.MathUtils.degToRad(48);
         
         // Target directional light at the model center
