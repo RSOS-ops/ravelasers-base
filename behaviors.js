@@ -110,9 +110,11 @@ export class BehaviorDefault {
     _jumpLasers(laserSystem) {
         const controls = laserSystem.getControls();
         const targetCenter = controls ? controls.target : new THREE.Vector3();
+        const fixedTarget = new THREE.Vector3(0, 0, 0); // Always target (0,0,0)
         
         for (let i = 0; i < 4; i++) {
             this.origins[i] = getRandomPointOnSphere(targetCenter, this.ORIGIN_SPHERE_RADIUS);
+            this.targets[i].copy(fixedTarget); // Ensure targets remain at (0,0,0)
             this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
         }
     }

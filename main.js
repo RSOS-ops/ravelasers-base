@@ -4,6 +4,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { LaserSystem } from './LaserSystem.js'; // Import LaserSystem
 import { PresetManager } from './PresetManager.js'; // Import PresetManager
+import { CLI } from './CLI.js'; // Import CLI
 
 // Scene Setup
 const scene = new THREE.Scene();
@@ -25,6 +26,9 @@ let controls = new OrbitControls(camera, renderer.domElement);
 controls.target.set(0, 0, 0);
 controls.enableDamping = true;
 controls.dampingFactor = 0.05;
+
+// CLI Setup
+const cli = new CLI();
 
 // Add controls lock state
 let controlsLocked = false;
@@ -235,6 +239,17 @@ gltfLoader.load(
         // Laser System Initialization
         laserSystem = new LaserSystem(scene, model, controls, camera); // model is now scaled
         presetManager = new PresetManager(laserSystem);
+        
+        // Make presetManager globally accessible for console use
+        window.presetManager = presetManager;
+        window.laserSystem = laserSystem; // Also expose laserSystem for advanced use
+        
+        // Connect CLI to presetManager
+        cli.setPresetManager(presetManager);
+        
+        console.log("✅ presetManager and laserSystem are now available in console!");
+        console.log("✅ CLI is ready! Use the interface on the left side of the screen.");
+        console.log("Try: presetManager.showSaved()");
         
         // Apply default bank
         try {

@@ -7,6 +7,21 @@
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- CLI Interface -->
+    <div id="cli-container">
+        <div id="cli-header">
+            <span id="cli-title">Laser CLI</span>
+            <button id="cli-toggle">−</button>
+        </div>
+        <div id="cli-content">
+            <div id="cli-output"></div>
+            <div id="cli-input-container">
+                <span id="cli-prompt">></span>
+                <input type="text" id="cli-input" placeholder="Type 'help' for commands">
+            </div>
+        </div>
+    </div>
+
     <script type="importmap">
         {
             "imports": {
