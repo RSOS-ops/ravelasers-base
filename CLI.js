@@ -1,4 +1,5 @@
 // CLI.js - Command Line Interface for Laser System
+import * as THREE from 'three';
 
 export class CLI {
     constructor() {
@@ -70,6 +71,30 @@ export class CLI {
                 description: 'Turn off all lighting helpers',
                 usage: 'helpers-off',
                 execute: () => this.setLightHelpers(false)
+            },            'hdri-on': {
+                description: 'Enable HDRI environment lighting (invisible background)',
+                usage: 'hdri-on',
+                execute: () => this.toggleHDRI(true)
+            },
+            'hdri-off': {
+                description: 'Disable HDRI environment lighting',
+                usage: 'hdri-off',
+                execute: () => this.toggleHDRI(false)
+            },
+            'hdri-bg-on': {
+                description: 'Show HDRI background (visible environment)',
+                usage: 'hdri-bg-on',
+                execute: () => this.showHDRIBackground(true)
+            },
+            'hdri-bg-off': {
+                description: 'Hide HDRI background (invisible but keep lighting)',
+                usage: 'hdri-bg-off',
+                execute: () => this.showHDRIBackground(false)
+            },
+            'exposure': {
+                description: 'Set HDRI exposure level',
+                usage: 'exposure <value>',
+                execute: (args) => this.setExposure(args)
             },
             save: {
                 description: 'Save a behavior configuration',
@@ -512,8 +537,83 @@ export class CLI {
 
         const status = visibility ? 'ON' : 'OFF';
         this.addOutput(`💡 Light helpers turned ${status} (${helpers.length} helpers)`, 'result');        this.addOutput('Helper state saved and will persist on reload', 'info');
+    }    toggleHDRI(enabled) {
+        if (!window.scene) {
+            this.addOutput('Scene not available!', 'error');
+            return;
+        }
+
+        const scene = window.scene;
+        
+        if (enabled) {
+            // Enable HDRI environment lighting but keep background black
+            if (window.hdriTexture) {
+                scene.environment = window.hdriTexture; // Lighting only
+                scene.background = new THREE.Color(0x000000); // Keep black background
+                this.addOutput('🌅 HDRI environment lighting enabled (invisible background)', 'result');
+            } else {
+                this.addOutput('❌ HDRI texture not loaded', 'error');
+            }
+        } else {
+            // Disable HDRI environment completely
+            scene.background = new THREE.Color(0x000000);
+            scene.environment = null;
+            this.addOutput('⚫ HDRI disabled - no environment lighting', 'result');
+        }
     }
 
+    showHDRIBackground(show) {
+        if (!window.scene) {
+            this.addOutput('Scene not available!', 'error');
+            return;
+        }
+
+        const scene = window.scene;
+        
+        if (show) {
+            // Show HDRI as background (if loaded)
+            if (window.hdriTexture) {
+                scene.background = window.hdriTexture;
+                scene.environment = window.hdriTexture; // Also ensure environment is on
+                this.addOutput('🖼️ HDRI background visible', 'result');
+            } else {
+                this.addOutput('❌ HDRI texture not loaded', 'error');
+            }
+        } else {
+            // Hide background but keep environment lighting
+            if (window.hdriTexture) {
+                scene.background = new THREE.Color(0x000000); // Black background
+                scene.environment = window.hdriTexture; // Keep lighting
+                this.addOutput('🌅 HDRI background hidden (lighting preserved)', 'result');
+            } else {
+                scene.background = new THREE.Color(0x000000);
+                this.addOutput('⚫ Black background set', 'result');
+            }
+        }
+    }
+
+    setExposure(args) {
+        if (!window.renderer) {
+            this.addOutput('Renderer not available!', 'error');
+            return;
+        }
+
+        if (args.length === 0) {
+            this.addOutput(`Current exposure: ${window.renderer.toneMappingExposure}`, 'info');
+            return;
+        }
+
+        const exposure = parseFloat(args[0]);
+        if (isNaN(exposure)) {
+            this.addOutput('Invalid exposure value. Use a number (e.g., 0.8)', 'error');
+            return;
+        }
+
+        window.renderer.toneMappingExposure = exposure;
+        this.addOutput(`🎛️ Exposure set to ${exposure}`, 'result');
+    }
+
+    // ...existing methods...
     manageDefault(args) {
         if (!this.presetManager) {
             this.addOutput('PresetManager not available!', 'error');

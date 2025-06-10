@@ -455,3 +455,55 @@ The wireframe behavior now logs detailed face targeting information:
 - Retargeting events when lasers jump to new faces
 
 ---
+
+## 🌅 **HDRI Environment Control**
+
+### `hdri-on`
+Enable HDRI environment lighting with invisible background
+```
+> hdri-on
+🌅 HDRI environment lighting enabled (invisible background)
+```
+
+### `hdri-off` 
+Disable HDRI environment lighting completely
+```
+> hdri-off
+⚫ HDRI disabled - no environment lighting
+```
+
+### `hdri-bg-on`
+Show HDRI background image (visible environment sphere)
+```
+> hdri-bg-on
+🖼️ HDRI background visible
+```
+
+### `hdri-bg-off`
+Hide HDRI background but preserve environment lighting
+```
+> hdri-bg-off
+🌅 HDRI background hidden (lighting preserved)
+```
+
+### `exposure <value>`
+Adjust HDRI exposure level for tone mapping
+```
+> exposure 1.2    # Brighter
+> exposure 0.5    # Darker
+> exposure        # Show current value
+```
+
+**📋 Common exposure values:**
+- `0.3-0.6`: Dark/moody lighting
+- `0.8-1.0`: Balanced lighting (default: 0.8)
+- `1.2-2.0`: Bright/overexposed look
+
+**💡 HDRI Modes:**
+- **Default**: Invisible background + environment lighting (realistic lighting, clean background)
+- **Full HDRI**: Visible background + environment lighting (immersive environment)
+- **No HDRI**: Black background + no environment lighting (pure artificial lighting)
+
+---
+
+## Behavior Management

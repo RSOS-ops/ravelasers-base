@@ -2,6 +2,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { EXRLoader } from 'three/addons/loaders/EXRLoader.js';
 import { LaserSystem } from './LaserSystem.js'; // Import LaserSystem
 import { PresetManager } from './PresetManager.js'; // Import PresetManager
 import { CLI } from './CLI.js'; // Import CLI
@@ -9,7 +10,38 @@ import { LaserFactory } from './LaserFactory.js'; // Import LaserFactory
 
 // Scene Setup
 const scene = new THREE.Scene();
-scene.background = new THREE.Color(0x000000);
+
+// HDRI Environment Setup
+console.log("🌅 Loading HDRI environment...");
+const exrLoader = new EXRLoader();
+exrLoader.load(
+    './assets/satara_night_2k.exr',
+    (texture) => {
+        // Set up as equirectangular environment map
+        texture.mapping = THREE.EquirectangularReflectionMapping;
+        
+        // Use HDRI for environment lighting only (invisible background)
+        scene.background = new THREE.Color(0x000000); // Keep black background
+        scene.environment = texture; // But use HDRI for lighting and reflections
+        
+        // Store texture globally for CLI access
+        window.hdriTexture = texture;
+        
+        console.log("✅ HDRI environment loaded successfully!");
+        console.log("🎭 Scene uses HDRI for lighting (invisible background)");
+        console.log("💡 Use CLI commands: hdri-on, hdri-off, exposure <value>");
+    },
+    (progress) => {
+        const percent = Math.round((progress.loaded / progress.total) * 100);
+        console.log(`📦 Loading HDRI: ${percent}%`);
+    },
+    (error) => {
+        console.error("❌ Failed to load HDRI:", error);
+        // Fallback to black background
+        scene.background = new THREE.Color(0x000000);
+        console.log("🔙 Using fallback black background");
+    }
+);
 
 // Make scene globally accessible for CLI
 window.scene = scene;
@@ -20,12 +52,18 @@ const clock = new THREE.Clock();
 // Camera Setup
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 
-// Renderer Setup
+// Renderer Setup - Enhanced for HDRI
 const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap; // Enable soft shadows
+renderer.toneMapping = THREE.ACESFilmicToneMapping; // Better HDR tone mapping
+renderer.toneMappingExposure = 0.8; // Adjust exposure for HDRI
+renderer.outputColorSpace = THREE.SRGBColorSpace; // Correct color space
 document.body.appendChild(renderer.domElement);
+
+// Make renderer globally accessible for CLI
+window.renderer = renderer;
 
 // Controls Setup
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -60,12 +98,12 @@ function unlockControls() {
 // Lock controls immediately
 lockControls(); // tradición
 
-// Lighting Setup
-const ambientLight = new THREE.AmbientLight(0xffffff, 0);
+// Lighting Setup - Adjusted for HDRI environment
+const ambientLight = new THREE.AmbientLight(0xffffff, 0.1); // Slight ambient boost
 scene.add(ambientLight);
 
-// Directional Light Setup
-const directionalLight = new THREE.DirectionalLight(0xffffff, 47);
+// Directional Light Setup - Reduced intensity since HDRI provides main lighting
+const directionalLight = new THREE.DirectionalLight(0xffffff, 5); // Reduced from 47 to 5
 directionalLight.position.set(2, .5, 3); // Position light from camera perspective
 directionalLight.castShadow = true; // Enable shadows
 directionalLight.shadow.mapSize.width = 2048;
@@ -171,12 +209,12 @@ const spotlightConfig = {
         decay: 0.5,
         showHelper: true  // Enable helper
     },
-    // New "Flashers" lighting system - 4 symmetrical spotlights
+    // New "Flashers" lighting system - 4 symmetrical spotlights (adjusted for HDRI)
     flasher1: {
         position: { x: 1.5, y: 1.5, z: 1.5 },    // Closer to model
         target: { x: 0, y: 0.25, z: 0 },
         color: 0xff0000,  // Red color to make it more visible
-        intensity: 12,     // Increased intensity
+        intensity: 3,     // Reduced from 12 to 3 for HDRI
         distance: 2.75,      // Reduced distance
         angle: THREE.MathUtils.degToRad(7),  // 7 degrees
         penumbra: 0.3,
@@ -187,7 +225,7 @@ const spotlightConfig = {
         position: { x: -1.5, y: 1.5, z: 1.5 },
         target: { x: 0, y: 0.25, z: 0 },
         color: 0x00ff00,  // Green color
-        intensity: 12,
+        intensity: 3,    // Reduced from 12 to 3 for HDRI
         distance: 2.75,
         angle: THREE.MathUtils.degToRad(7),  // 7 degrees
         penumbra: 0.3,
@@ -198,7 +236,7 @@ const spotlightConfig = {
         position: { x: 1.5, y: 1.5, z: -1.5 },
         target: { x: 0, y: -0.25, z: 0 },
         color: 0xffffff,  // White color
-        intensity: 25,
+        intensity: 6,    // Reduced from 25 to 6 for HDRI
         distance: 2.75,
         angle: THREE.MathUtils.degToRad(8),  // 8 degrees
         penumbra: 0.3,
@@ -209,7 +247,7 @@ const spotlightConfig = {
         position: { x: -1.5, y: 1.5, z: -1.5 },
         target: { x: 0, y: -0.25, z: 0 },
         color: 0xffffff,  // White color
-        intensity: 25,
+        intensity: 6,    // Reduced from 25 to 6 for HDRI
         distance: 2.75,
         angle: THREE.MathUtils.degToRad(8),  // 8 degrees
         penumbra: 0.3,

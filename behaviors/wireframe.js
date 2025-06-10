@@ -143,8 +143,7 @@ export class BehaviorWireframe {
             this._updateSingleLaserGeometry(this.laserLines[i], this.origins[i], this.directions[i], laserSystem);
         }
     }
-    
-    _updateSingleLaserGeometry(laserLine, origin, direction, laserSystem) {
+      _updateSingleLaserGeometry(laserLine, origin, direction, laserSystem) {
         const points = [];
         let currentOrigin = origin.clone();
         let currentDirection = direction.clone();
@@ -158,21 +157,34 @@ export class BehaviorWireframe {
                 const impactPoint = intersection.point;
                 points.push(impactPoint.clone());
 
+                // Debug log for first bounce
+                if (i === 0) {
+                    console.log(`🔄 Laser hit surface at:`, impactPoint, 'distance:', intersection.distance);
+                }
+
                 const surfaceNormal = intersection.face.normal.clone();
                 const worldNormal = new THREE.Vector3();
                 worldNormal.copy(surfaceNormal).transformDirection(intersection.object.matrixWorld);
 
+                // Ensure normal points away from incoming ray
                 if (currentDirection.dot(worldNormal) > 0) {
                     worldNormal.negate();
                 }
 
+                // Reflect the direction off the surface
                 currentDirection.reflect(worldNormal);
+                
+                // Move slightly off the surface to prevent self-intersection
                 currentOrigin.copy(impactPoint).add(currentDirection.clone().multiplyScalar(0.001));
 
                 if (i === this.MAX_BOUNCES - 1) {
                     points.push(currentOrigin.clone().add(currentDirection.clone().multiplyScalar(this.MAX_LENGTH)));
                 }
             } else {
+                // No intersection found - extend laser to max length
+                if (i === 0) {
+                    console.warn('❌ No surface intersection found for laser');
+                }
                 points.push(currentOrigin.clone().add(currentDirection.clone().multiplyScalar(this.MAX_LENGTH)));
                 break;
             }
