@@ -129,8 +129,7 @@ gltfLoader.load(
         // Target directional light at the model
         directionalLightTarget.position.set(0, 0, 0);
         
-        // Unlock controls now that model is positioned
-        unlockControls();
+        // Controls remain locked - removed unlockControls() call
         // ---END MODIFIED ORDER---
 
         // --- SPOTLIGHT MODIFICATIONS ---
@@ -194,6 +193,12 @@ function animate() {
 
     if (controls.enableDamping && !controlsLocked) {
         controls.update();
+    }
+
+    // Rotate model on Y-axis: 360 degrees (2π radians) every 30 seconds
+    if (model) {
+        const rotationSpeed = (2 * Math.PI) / 30; // radians per second
+        model.rotation.y += rotationSpeed * deltaTime;
     }
 
     // NEW: Update LaserSystem if it exists
