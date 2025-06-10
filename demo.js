@@ -125,7 +125,7 @@ console.log("MAX_BRIGHTNESS: 1.0-5.0  (maximum laser intensity)");
 // Real working demonstration:
 console.log("\n🚀 WORKING DEMONSTRATION:");
 console.log("The following commands are ready to execute:");
-
+////
 // Demo commands are available but not auto-executed
 console.log("\n💡 To try the demo:");
 console.log("presetManager.loadBehavior('red_default')");
