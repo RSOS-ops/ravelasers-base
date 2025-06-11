@@ -16,13 +16,10 @@ export class BehaviorDefault {
         this.MAX_BOUNCES = config.MAX_BOUNCES || 3;
         this.laserColor = new THREE.Color(config.laserColor || 0xff0000);
         
-        // Laser objects
-        this.laserLines = [];
-        this.materials = [];
+        // Laser state/config only
         this.origins = [];
         this.directions = [];
         this.targets = [];
-        this.cylinderMeshes = []; // Store cylinder meshes for each laser
         
         // Camera tracking for jump logic
         this.previousCameraPosition = new THREE.Vector3();
@@ -34,35 +31,16 @@ export class BehaviorDefault {
     
     init(laserSystem) {
         console.log('BehaviorDefault: Initializing default behavior');
-        this._setupLasers(laserSystem);
         this._initializeLaserPositions(laserSystem);
-    }
-    
-    _setupLasers(laserSystem) {
-        const scene = laserSystem.getScene();
-        
-        // Create 4 lasers
+        // Create lasers via LaserSystem
         for (let i = 0; i < 4; i++) {
-            const material = new THREE.LineBasicMaterial({ color: this.laserColor });
-            const points = [new THREE.Vector3(), new THREE.Vector3(0, 0, 1)];
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const line = new THREE.Line(geometry, material);
-            
-            scene.add(line);
-            this.laserLines.push(line);
-            this.materials.push(material);
-            this.origins.push(new THREE.Vector3());
-            this.directions.push(new THREE.Vector3(0, 0, -1));
-            this.targets.push(new THREE.Vector3());
-            
-            // --- Cylinder mesh ---
-            const cylGeom = new THREE.CylinderGeometry(0.025, 0.025, 1, 12, 1, true); // radius, height, segments
-            const cylMat = new THREE.MeshStandardMaterial({ color: this.laserColor, emissive: this.laserColor, emissiveIntensity: 1, metalness: 0.7, roughness: 0.2 });
-            const cylinder = new THREE.Mesh(cylGeom, cylMat);
-            cylinder.castShadow = false;
-            cylinder.receiveShadow = false;
-            scene.add(cylinder);
-            this.cylinderMeshes.push(cylinder);
+            laserSystem.createLaser({
+                origin: this.origins[i],
+                target: this.targets[i],
+                laserColor: this.laserColor.getHex(),
+                MAX_BOUNCES: this.MAX_BOUNCES,
+                MAX_LENGTH: this.MAX_LENGTH
+            });
         }
     }
     
@@ -74,8 +52,8 @@ export class BehaviorDefault {
         // Set random origins on sphere
         for (let i = 0; i < 4; i++) {
             this.origins[i] = getRandomPointOnSphere(targetCenter, this.ORIGIN_SPHERE_RADIUS);
-            this.targets[i].copy(fixedTarget);
-            this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
+            this.targets[i] = fixedTarget.clone();
+            this.directions[i] = new THREE.Vector3().subVectors(this.targets[i], this.origins[i]).normalize();
         }
         
         console.log("BehaviorDefault: Initialized default behavior with 4 lasers");
@@ -123,87 +101,21 @@ export class BehaviorDefault {
         
         for (let i = 0; i < 4; i++) {
             this.origins[i] = getRandomPointOnSphere(targetCenter, this.ORIGIN_SPHERE_RADIUS);
-            this.targets[i].copy(fixedTarget); // Ensure targets remain at (0,0,0)
-            this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
+            this.targets[i] = fixedTarget.clone();
+            this.directions[i] = new THREE.Vector3().subVectors(this.targets[i], this.origins[i]).normalize();
         }
     }
     
     _updatePulsing(clock) {
-        const currentPulseFrequency = this.BASE_PULSE_FREQUENCY;
-        const sharedPulseIntensity = (Math.sin(clock.elapsedTime * currentPulseFrequency * Math.PI * 2) + 1) / 2;
-        const brightnessScalar = this.MIN_BRIGHTNESS + (sharedPulseIntensity * (this.MAX_BRIGHTNESS - this.MIN_BRIGHTNESS));
-        
-        const currentLaserColorHex = parseInt(this.laserColor.getHexString(), 16);
-        
-        this.materials.forEach(material => {
-            material.color.setHex(currentLaserColorHex).multiplyScalar(brightnessScalar);
-        });
+        // Only update config/parameters, not Three.js objects
     }
     
     _updateLaserGeometry(laserSystem) {
-        for (let i = 0; i < this.laserLines.length; i++) {
-            this._updateSingleLaserGeometry(this.laserLines[i], this.origins[i], this.directions[i], laserSystem, this.cylinderMeshes[i]);
-        }
-    }
-    
-    _updateSingleLaserGeometry(laserLine, origin, direction, laserSystem, cylinderMesh) {
-        const points = [];
-        let currentOrigin = origin.clone();
-        let currentDirection = direction.clone();
-        points.push(currentOrigin.clone());
-
-        for (let i = 0; i < this.MAX_BOUNCES; i++) {
-            const intersects = laserSystem.raycast(currentOrigin, currentDirection);
-
-            if (intersects.length > 0) {
-                const intersection = intersects[0];
-                const impactPoint = intersection.point;
-                points.push(impactPoint.clone());
-
-                const surfaceNormal = intersection.face.normal.clone();
-                const worldNormal = new THREE.Vector3();
-                worldNormal.copy(surfaceNormal).transformDirection(intersection.object.matrixWorld);
-
-                if (currentDirection.dot(worldNormal) > 0) {
-                    worldNormal.negate();
-                }
-
-                currentDirection.reflect(worldNormal);
-                currentOrigin.copy(impactPoint).add(currentDirection.clone().multiplyScalar(0.001));
-
-                if (i === this.MAX_BOUNCES - 1) {
-                    points.push(currentOrigin.clone().add(currentDirection.clone().multiplyScalar(this.MAX_LENGTH)));
-                }
-            } else {
-                points.push(currentOrigin.clone().add(currentDirection.clone().multiplyScalar(this.MAX_LENGTH)));
-                break;
-            }
-        }
-        
-        laserLine.geometry.setFromPoints(points);
-        laserLine.geometry.attributes.position.needsUpdate = true;
-        
-        // --- Cylinder update ---
-        if (cylinderMesh && points.length >= 2) {
-            const start = points[0];
-            const end = points[1];
-            const delta = new THREE.Vector3().subVectors(end, start);
-            const length = delta.length();
-            cylinderMesh.position.copy(start).addScaledVector(delta, 0.5);
-            cylinderMesh.scale.set(1, length, 1);
-            // Orient cylinder to match laser direction
-            cylinderMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.clone().normalize());
-            cylinderMesh.visible = true;
-        }
+        // Only update config/state, not Three.js objects
     }
     
     cleanup(laserSystem) {
-        const scene = laserSystem.getScene();
-        this.laserLines.forEach(line => scene.remove(line));
-        this.cylinderMeshes.forEach(cyl => scene.remove(cyl));
-        this.laserLines = [];
-        this.cylinderMeshes = [];
-        this.materials = [];
+        // No Three.js object removal needed
         this.origins = [];
         this.directions = [];
         this.targets = [];

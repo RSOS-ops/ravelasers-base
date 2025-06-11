@@ -24,6 +24,17 @@ export function getRandomTargetVertex(verticesArray) {
 }
 
 export class LaserSystem {
+    // Global cylinder mesh parameters
+    static CYLINDER_RADIUS = 0.005;
+    static CYLINDER_SEGMENTS = 12;
+    static CYLINDER_MATERIAL = new THREE.MeshStandardMaterial({
+        color: 0xffffff,
+        emissive: 0xffffff,
+        emissiveIntensity: 1,
+        metalness: 0.7,
+        roughness: 0.2
+    });
+
     constructor(scene, model, controls, camera) {
         this.scene = scene;
         this.model = model;
@@ -168,23 +179,64 @@ export class LaserSystem {
         return this.modelFaces[randomIndex];
     }
 
+    /**
+     * Create a laser with both a THREE.Line and a cylinder mesh, using global parameters
+     * @param {object} config - Laser configuration (color, origin, target, etc.)
+     * @returns {object} laser object with line, cylinder, and config
+     */
     createLaser(config) {
-        // ...existing laser creation code...
-        
-        // Set random target vertex
-        const targetVertex = this.getRandomModelVertex();
-        laser.targetPosition = targetVertex;
-        
-        // If using line geometry, update the line to point to the vertex
-        if (laser.line && laser.line.geometry) {
-            const positions = laser.line.geometry.attributes.position.array;
-            positions[3] = targetVertex.x; // End point X
-            positions[4] = targetVertex.y; // End point Y
-            positions[5] = targetVertex.z; // End point Z
-            laser.line.geometry.attributes.position.needsUpdate = true;
-        }
-        
-        // ...rest of laser creation...
+        // Config: { origin, target, color, ... }
+        const origin = config.origin ? config.origin.clone() : new THREE.Vector3();
+        const target = config.target ? config.target.clone() : this.getRandomModelVertex();
+        const color = config.laserColor || 0xffffff;
+
+        // Create line
+        const lineGeometry = new THREE.BufferGeometry();
+        const linePositions = new Float32Array([
+            origin.x, origin.y, origin.z,
+            target.x, target.y, target.z
+        ]);
+        lineGeometry.setAttribute('position', new THREE.BufferAttribute(linePositions, 3));
+        const lineMaterial = new THREE.LineBasicMaterial({ color });
+        const line = new THREE.Line(lineGeometry, lineMaterial);
+        this.scene.add(line);
+
+        // Create cylinder mesh
+        const cylGeom = new THREE.CylinderGeometry(
+            LaserSystem.CYLINDER_RADIUS,
+            LaserSystem.CYLINDER_RADIUS,
+            1,
+            LaserSystem.CYLINDER_SEGMENTS,
+            1,
+            true
+        );
+        const cylMat = LaserSystem.CYLINDER_MATERIAL.clone();
+        cylMat.color.set(color);
+        cylMat.emissive.set(color);
+        const cylinder = new THREE.Mesh(cylGeom, cylMat);
+        cylinder.castShadow = false;
+        cylinder.receiveShadow = false;
+        this.scene.add(cylinder);
+
+        // Position and scale cylinder to match laser
+        const delta = new THREE.Vector3().subVectors(target, origin);
+        const length = delta.length();
+        cylinder.position.copy(origin).addScaledVector(delta, 0.5);
+        cylinder.scale.set(1, length, 1);
+        cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.clone().normalize());
+        cylinder.visible = true;
+
+        // Store laser object
+        const laser = {
+            origin: origin.clone(),
+            target: target.clone(),
+            color,
+            line,
+            cylinder,
+            config: { ...config }
+        };
+        this.lasers.push(laser);
+        return laser;
     }
 
     // Method to retarget a laser to a new random vertex
@@ -218,6 +270,7 @@ export class LaserSystem {
     
     // Controller methods for managing behaviors
     addBehavior(behavior) {
+        this.clearAllLasers(); // Always clear lasers before adding a new behavior
         this.activeBehaviors.push(behavior);
         behavior.init(this); // Let behavior initialize itself with system context
         console.log('LaserSystem: Added behavior:', behavior.constructor.name);
@@ -236,6 +289,16 @@ export class LaserSystem {
         console.log('LaserSystem: Clearing all behaviors');
         this.activeBehaviors.forEach(behavior => behavior.cleanup(this));
         this.activeBehaviors = [];
+        this.clearAllLasers(); // Also clear all lasers from the scene
+    }
+
+    clearAllLasers() {
+        // Remove all laser lines and cylinders from the scene
+        for (const laser of this.lasers) {
+            if (laser.line) this.scene.remove(laser.line);
+            if (laser.cylinder) this.scene.remove(laser.cylinder);
+        }
+        this.lasers = [];
     }
 
     // Main update loop - delegates to behaviors

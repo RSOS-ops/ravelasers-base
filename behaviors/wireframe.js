@@ -15,14 +15,11 @@ export class BehaviorWireframe {
         this.MAX_LENGTH = config.MAX_LENGTH || 20;
         this.MAX_BOUNCES = config.MAX_BOUNCES || 3;
         this.laserColor = new THREE.Color(config.laserColor || 0x00ff00); // Default to green for wireframe
-          // Laser objects
-        this.laserLines = [];
-        this.materials = [];
+          // Laser state/config only
         this.origins = [];
         this.directions = [];
         this.targets = [];
         this.targetFaces = []; // Store target face data for reflection
-        this.cylinderMeshes = []; // Store cylinder meshes for each laser
         
         // Camera tracking for jump logic
         this.previousCameraPosition = new THREE.Vector3();
@@ -34,37 +31,20 @@ export class BehaviorWireframe {
     
     init(laserSystem) {
         console.log('BehaviorWireframe: Initializing wireframe behavior');
-        this._setupLasers(laserSystem);
         this._initializeLaserPositions(laserSystem);
+        // Create lasers via LaserSystem
+        for (let i = 0; i < 4; i++) {
+            laserSystem.createLaser({
+                origin: this.origins[i],
+                target: this.targets[i],
+                laserColor: this.laserColor.getHex(),
+                MAX_BOUNCES: this.MAX_BOUNCES,
+                MAX_LENGTH: this.MAX_LENGTH
+            });
+        }
     }
     
-    _setupLasers(laserSystem) {
-        const scene = laserSystem.getScene();
-        
-        // Create 4 lasers
-        for (let i = 0; i < 4; i++) {
-            const material = new THREE.LineBasicMaterial({ color: this.laserColor });
-            const points = [new THREE.Vector3(), new THREE.Vector3(0, 0, 1)];
-            const geometry = new THREE.BufferGeometry().setFromPoints(points);
-            const line = new THREE.Line(geometry, material);
-            
-            scene.add(line);
-            this.laserLines.push(line);
-            this.materials.push(material);
-            this.origins.push(new THREE.Vector3());
-            this.directions.push(new THREE.Vector3(0, 0, -1));
-            this.targets.push(new THREE.Vector3());
-            
-            // --- Cylinder mesh ---
-            const cylGeom = new THREE.CylinderGeometry(0.025, 0.025, 1, 12, 1, true); // radius, height, segments
-            const cylMat = new THREE.MeshStandardMaterial({ color: this.laserColor, emissive: this.laserColor, emissiveIntensity: 1, metalness: 0.7, roughness: 0.2 });
-            const cylinder = new THREE.Mesh(cylGeom, cylMat);
-            cylinder.castShadow = false;
-            cylinder.receiveShadow = false;
-            scene.add(cylinder);
-            this.cylinderMeshes.push(cylinder);
-        }
-    }      _initializeLaserPositions(laserSystem) {
+    _initializeLaserPositions(laserSystem) {
         const controls = laserSystem.getControls();
         const targetCenter = controls ? controls.target : new THREE.Vector3();
         
@@ -77,7 +57,7 @@ export class BehaviorWireframe {
             this.targets[i] = randomFace.center.clone();
             this.targetFaces[i] = randomFace;
             
-            this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
+            this.directions[i] = new THREE.Vector3().subVectors(this.targets[i], this.origins[i]).normalize();
             
             console.log(`🎯 Laser ${i} targeting face center:`, this.targets[i], 'with normal:', randomFace.normal);
         }
@@ -130,7 +110,7 @@ export class BehaviorWireframe {
             this.targets[i] = randomFace.center.clone();
             this.targetFaces[i] = randomFace;
             
-            this.directions[i].subVectors(this.targets[i], this.origins[i]).normalize();
+            this.directions[i] = new THREE.Vector3().subVectors(this.targets[i], this.origins[i]).normalize();
             
             console.log(`🔄 Laser ${i} retargeted to face center:`, this.targets[i], 'with normal:', randomFace.normal);
         }
@@ -150,10 +130,10 @@ export class BehaviorWireframe {
     
     _updateLaserGeometry(laserSystem) {
         for (let i = 0; i < this.laserLines.length; i++) {
-            this._updateSingleLaserGeometry(this.laserLines[i], this.origins[i], this.directions[i], laserSystem, this.cylinderMeshes[i]);
+            this._updateSingleLaserGeometry(this.laserLines[i], this.origins[i], this.directions[i], laserSystem);
         }
     }
-      _updateSingleLaserGeometry(laserLine, origin, direction, laserSystem, cylinderMesh) {
+      _updateSingleLaserGeometry(laserLine, origin, direction, laserSystem) {
         const points = [];
         let currentOrigin = origin.clone();
         let currentDirection = direction.clone();
@@ -202,17 +182,6 @@ export class BehaviorWireframe {
         
         laserLine.geometry.setFromPoints(points);
         laserLine.geometry.attributes.position.needsUpdate = true;
-        // --- Cylinder update ---
-        if (cylinderMesh && points.length >= 2) {
-            const start = points[0];
-            const end = points[1];
-            const delta = new THREE.Vector3().subVectors(end, start);
-            const length = delta.length();
-            cylinderMesh.position.copy(start).addScaledVector(delta, 0.5);
-            cylinderMesh.scale.set(1, length, 1);
-            cylinderMesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.clone().normalize());
-            cylinderMesh.visible = true;
-        }
     }
       _getRandomModelFace(laserSystem) {
         // Try to get a random face from the loaded model
@@ -233,12 +202,6 @@ export class BehaviorWireframe {
             ]
         };
     }    cleanup(laserSystem) {
-        const scene = laserSystem.getScene();
-        this.laserLines.forEach(line => scene.remove(line));
-        this.cylinderMeshes.forEach(cyl => scene.remove(cyl));
-        this.laserLines = [];
-        this.cylinderMeshes = [];
-        this.materials = [];
         this.origins = [];
         this.directions = [];
         this.targets = [];

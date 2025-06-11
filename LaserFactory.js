@@ -89,63 +89,7 @@ export class LaserFactory {
         return this;
     }
 
-    /**
-     * Quick test with common configurations
-     * @param {string} preset - Preset name
-     */
-    quickTest(preset) {
-        const presets = {
-            // Speed tests
-            'fast': { STILLNESS_LIMIT: 0.05 }, // Very fast jumps
-            'slow': { STILLNESS_LIMIT: 0.3 },  // Slow jumps
-            'ultra_fast': { STILLNESS_LIMIT: 0.025 }, // Ultra fast
-            
-            // Color tests
-            'rainbow': { laserColor: this.colors.cyan, MAX_BOUNCES: 7 },
-            'fire': { laserColor: this.colors.orange, MAX_BRIGHTNESS: 3.0 },
-            'ice': { laserColor: this.colors.cyan, MIN_BRIGHTNESS: 0.8 },
-            
-            // Bounce tests
-            'bouncy': { MAX_BOUNCES: 10, laserColor: this.colors.green },
-            'no_bounce': { MAX_BOUNCES: 1, laserColor: this.colors.red },
-            
-            // Size tests
-            'wide': { ORIGIN_SPHERE_RADIUS: 25, laserColor: this.colors.purple },
-            'tight': { ORIGIN_SPHERE_RADIUS: 3, laserColor: this.colors.yellow },
-            
-            // Pulse tests
-            'pulse_fast': { BASE_PULSE_FREQUENCY: 2.0, laserColor: this.colors.magenta },
-            'pulse_slow': { BASE_PULSE_FREQUENCY: 0.1, laserColor: this.colors.blue },
-            'bright': { MAX_BRIGHTNESS: 4.0, MIN_BRIGHTNESS: 1.0, laserColor: this.colors.white },
-            
-            // Complex combinations
-            'chaos': { 
-                MAX_BOUNCES: 8, 
-                ORIGIN_SPHERE_RADIUS: 20, 
-                BASE_PULSE_FREQUENCY: 1.5,
-                laserColor: this.colors.pink,
-                STILLNESS_LIMIT: 0.06
-            },
-            'zen': {
-                MAX_BOUNCES: 2,
-                ORIGIN_SPHERE_RADIUS: 8,
-                BASE_PULSE_FREQUENCY: 0.3,
-                laserColor: this.colors.teal,
-                STILLNESS_LIMIT: 0.4,
-                MIN_BRIGHTNESS: 0.5,
-                MAX_BRIGHTNESS: 1.5
-            }
-        };
-
-        const config = presets[preset];
-        if (!config) {
-            console.error(`❌ Unknown preset: "${preset}"`);
-            console.log("Available presets:", Object.keys(presets));
-            return this;
-        }
-
-        return this.test(config, preset);
-    }
+    
 
     /**
      * Create a custom configuration easily

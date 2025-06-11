@@ -29,13 +29,6 @@ export class BehaviorArray_1 {    constructor(config = {}) {
         this.surfaceCoords = []; // Store local coordinate systems for each hit face
         this.oppositeHitFaces = []; // Store hit face info for each opposite laser
         this.oppositeSurfaceCoords = []; // Store local coordinate systems for each opposite hit face
-
-        // Cylinder meshes for lasers
-        this.cylinderMeshes = [];
-        this.originalCylinderMeshes = [];
-        this.oppositeCylinderMeshes = [];
-        this.arrayCylinderMeshes = [];
-        this.oppositeArrayCylinderMeshes = [];
     }    // Called to initialize lasers
     init(laserSystem) {
         this.lasers = [];
@@ -49,45 +42,29 @@ export class BehaviorArray_1 {    constructor(config = {}) {
         this.oppositeSurfaceCoords = [];
         this.startTime = null;
         this.isArrayExpanded = false;
-        
-        const scene = laserSystem.getScene();
         const camera = laserSystem.getCamera();
         const target = laserSystem.getModel();
-        
-        const corners = this._getScreenCorners(camera, scene);
-        // Defensive: ensure target and target.position exist
+        const corners = this._getScreenCorners(camera);
         const targetPos = (target && target.position) ? target.position.clone() : new THREE.Vector3(0, 0, 0);
-        
-        // Create the initial 4 corner lasers
+        // Create the initial 4 corner lasers via LaserSystem
         for (let i = 0; i < 4; i++) {
-            // Defensive: ensure corners[i] is valid
             const start = corners[i] ? corners[i].clone() : new THREE.Vector3(0, 0, 0);
-            const laser = this._createLaser(start, targetPos);
-            scene.add(laser);
-            // --- Cylinder mesh ---
-            const cylGeom = new THREE.CylinderGeometry(0.025, 0.025, 1, 12, 1, true);
-            const cylMat = new THREE.MeshStandardMaterial({ color: this.laserColor, emissive: this.laserColor, emissiveIntensity: 1, metalness: 0.7, roughness: 0.2 });
-            const cylinder = new THREE.Mesh(cylGeom, cylMat);
-            cylinder.castShadow = false;
-            cylinder.receiveShadow = false;
-            scene.add(cylinder);
-            this.cylinderMeshes.push(cylinder);
-            this.originalCylinderMeshes.push(cylinder);
-            
-            // Store original laser data
-            this.originalLasers.push({
-                laser: laser,
-                startPos: start.clone(),
-                endPos: targetPos.clone(),
-                cornerIndex: i
+            laserSystem.createLaser({
+                origin: start,
+                target: targetPos,
+                laserColor: this.laserColor,
             });
-            
-            this.lasers.push(laser);
         }
-        
-        // Create 4 opposite lasers
-        this._createOppositeLasers(scene, corners, targetPos);
-        
+        // Create 4 opposite lasers via LaserSystem
+        for (let i = 0; i < 4; i++) {
+            const cornerPos = corners[i] ? corners[i].clone() : new THREE.Vector3(0, 0, 0);
+            const oppositePos = this._calculateOppositePosition(cornerPos, targetPos);
+            laserSystem.createLaser({
+                origin: oppositePos,
+                target: targetPos,
+                laserColor: this.laserColor,
+            });
+        }
         // Find hit faces for each corner laser using raycasting
         this._findHitFaces(laserSystem, corners, targetPos);
         
@@ -356,8 +333,7 @@ export class BehaviorArray_1 {    constructor(config = {}) {
         for (let i = 0; i < this.originalLasers.length; i++) {
             const laserData = this.originalLasers[i];
             const laser = laserData.laser;
-            const cylinder = this.originalCylinderMeshes[i];
-            if (!laser || !cylinder) continue;
+            if (!laser) continue;
             
             // Update original laser positions
             const start = corners[i] ? corners[i] : new THREE.Vector3(0, 0, 0);
@@ -369,13 +345,6 @@ export class BehaviorArray_1 {    constructor(config = {}) {
             positions[4] = targetPos.y;
             positions[5] = targetPos.z;
             laser.geometry.attributes.position.needsUpdate = true;
-            // --- Cylinder update ---
-            const delta = new THREE.Vector3().subVectors(targetPos, start);
-            const length = delta.length();
-            cylinder.position.copy(start).addScaledVector(delta, 0.5);
-            cylinder.scale.set(1, length, 1);
-            cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.clone().normalize());
-            cylinder.visible = true;
         }
         
         // Update opposite lasers
@@ -594,23 +563,12 @@ export class BehaviorArray_1 {    constructor(config = {}) {
             this.lasers.forEach(laser => scene.remove(laser));
         }
         
-        // Remove cylinder meshes from the scene
-        if (this.cylinderMeshes && laserSystem && laserSystem.getScene) {
-            const scene = laserSystem.getScene();
-            this.cylinderMeshes.forEach(cyl => scene.remove(cyl));
-        }
-        
         // Clear all arrays
         this.lasers = [];
         this.originalLasers = [];
         this.oppositeLasers = [];
         this.arrayLasers = [];
         this.oppositeArrayLasers = [];
-        this.cylinderMeshes = [];
-        this.originalCylinderMeshes = [];
-        this.oppositeCylinderMeshes = [];
-        this.arrayCylinderMeshes = [];
-        this.oppositeArrayCylinderMeshes = [];
         this.isArrayExpanded = false;
         this.startTime = null;
     }
