@@ -1,0 +1,120 @@
+// How to Use the Save/Load System + Scene-Default Persistence
+// ===========================================================
+
+// The system is now super simple! Open your browser console and use these commands:
+
+// ====== NEW: SCENE-DEFAULT SYSTEM ======
+// Any behavior or bank you load automatically becomes your "scene-default"
+// and will be restored when you reload the page or restart the app.
+
+// Example: Load a behavior
+presetManager.loadBehavior('my_red_lasers');  // Automatically becomes scene-default
+
+// Check your current state
+presetManager.showStatus();  // Shows scene-default and regular default
+
+// Clear scene-default if you want fresh starts
+presetManager.clearSceneDefault();
+
+// ====== BASIC USAGE ======
+
+// 1. SAVE BEHAVIORS (individual laser configurations)
+presetManager.saveBehavior('my_red_lasers', { 
+    laserColor: 0xff0000, 
+    MAX_BOUNCES: 3,
+    ORIGIN_SPHERE_RADIUS: 10 
+});
+
+presetManager.saveBehavior('cool_blue', { 
+    laserColor: 0x0080ff, 
+    MAX_BOUNCES: 5,
+    ORIGIN_SPHERE_RADIUS: 15 
+});
+
+// 2. LOAD BEHAVIORS (apply one behavior)
+presetManager.loadBehavior('my_red_lasers');  // Shows just red lasers
+presetManager.loadBehavior('cool_blue');      // Shows just blue lasers
+
+// 3. SAVE BANKS (collections of behaviors)
+presetManager.saveBank('my_mix', ['my_red_lasers', 'cool_blue']);
+presetManager.saveBank('simple_show', ['my_red_lasers']);
+
+// 4. LOAD BANKS (apply multiple behaviors at once)
+presetManager.loadBank('my_mix');        // Shows both red and blue lasers
+presetManager.loadBank('simple_show');   // Shows just red lasers
+
+// ====== HELPFUL COMMANDS ======
+
+// See what you've saved
+presetManager.showSaved();              // Shows everything
+presetManager.listBehaviors();          // Shows just behaviors
+presetManager.listBanks();              // Shows just banks
+
+// ====== QUICK EXAMPLES ======
+
+// Example 1: Create a "party mode"
+presetManager.saveBehavior('red_party', { laserColor: 0xff0000, MAX_BOUNCES: 2 });
+presetManager.saveBehavior('green_party', { laserColor: 0x00ff00, MAX_BOUNCES: 2 });
+presetManager.saveBehavior('blue_party', { laserColor: 0x0000ff, MAX_BOUNCES: 2 });
+presetManager.saveBank('party_mode', ['red_party', 'green_party', 'blue_party']);
+presetManager.loadBank('party_mode');  // Apply party mode!
+
+// Example 2: Create a "calm mode"
+presetManager.saveBehavior('soft_white', { laserColor: 0xffffff, MAX_BOUNCES: 1, ORIGIN_SPHERE_RADIUS: 5 });
+presetManager.saveBank('calm_mode', ['soft_white']);
+presetManager.loadBank('calm_mode');   // Apply calm mode!
+
+// ====== HIERARCHY EXPLAINED ======
+// 
+// BEHAVIORS = Individual laser settings (color, bounces, etc.)
+//     ↓
+// BANKS = Collections of behaviors
+//     ↓  
+// PRESETS = Collections of banks (legacy system, still works)
+//
+// PERSISTENCE PRIORITY (what loads on page refresh):
+// 1. Scene-default (whatever you loaded last)
+// 2. Regular default (what you manually set as default)
+// 3. Nothing (clean start)
+//
+// Scene-default = Current session state (automatic)
+// Regular default = Fallback setting (manual)
+
+// ====== DEFAULT CONFIGURATIONS ======
+// These are already loaded for you:
+//
+// BEHAVIORS:
+// - 'red_default'   (red lasers)
+// - 'green_lasers'  (green lasers) 
+// - 'blue_bounce'   (blue with 5 bounces)
+// - 'yellow_wide'   (yellow with wide radius)
+//
+// BANKS:
+// - 'rave_mode'     (red_default)
+// - 'chill_mode'    (green_lasers)
+// - 'chaos_mode'    (red_default + green_lasers + blue_bounce)
+
+// Try them out:
+// presetManager.loadBank('rave_mode');
+// presetManager.loadBank('chill_mode'); 
+// presetManager.loadBank('chaos_mode');
+
+// ====== CONFIGURATION OPTIONS ======
+// When saving behaviors, you can use these options:
+//
+// laserColor: 0xff0000           // Hex color (red = 0xff0000, blue = 0x0000ff, etc.)
+// MAX_BOUNCES: 3                 // Number of times laser bounces off model
+// ORIGIN_SPHERE_RADIUS: 10       // How far from center the lasers start
+// MIN_BRIGHTNESS: 0.3            // Minimum brightness during pulse
+// MAX_BRIGHTNESS: 2.5            // Maximum brightness during pulse  
+// BASE_PULSE_FREQUENCY: 0.5      // How fast the pulse animation
+// MAX_LENGTH: 20                 // Maximum laser length
+// STILLNESS_LIMIT: 0.167         // How long camera must be still before lasers jump
+
+// ====== TIPS ======
+// 
+// 1. Always save behaviors BEFORE saving banks
+// 2. Bank names and behavior names must be unique
+// 3. Use the browser console to run these commands
+// 4. Call presetManager.showSaved() anytime to see what you have
+// 5. Colors are in hex format (Google "hex color picker" for easy colors)
