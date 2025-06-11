@@ -58,16 +58,17 @@ export class BehaviorDefault {
         
         console.log("BehaviorDefault: Initialized default behavior with 4 lasers");
     }
-    
-    update(deltaTime, clock, laserSystem) {
+      update(deltaTime, clock, laserSystem) {
         // Handle camera stillness detection and jumping (if needed)
         this._handleCameraMovement(deltaTime, laserSystem);
         
         // Update pulsing
         this._updatePulsing(clock);
         
-        // Update laser geometry
-        this._updateLaserGeometry(laserSystem);
+        // Update laser origins and targets in LaserSystem
+        for (let i = 0; i < Math.min(this.origins.length, laserSystem.lasers.length); i++) {
+            laserSystem.updateLaserFromBehavior(i, this.origins[i], this.targets[i]);
+        }
     }
     
     _handleCameraMovement(deltaTime, laserSystem) {

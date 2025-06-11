@@ -92,7 +92,7 @@ export class PresetManager {
      * Save current laser setup as a behavior
      * @param {string} name - Name to save as
      * @param {object} config - Behavior configuration
-     * @param {string} behaviorType - Type of behavior (default, wireframe, etc.)
+     * @param {string} behaviorType - Type of behavior (default, start, array_1, etc.)
      */
     saveBehavior(name, config, behaviorType = 'default') {
         return this.saveLoadManager.saveBehavior(name, config, behaviorType);

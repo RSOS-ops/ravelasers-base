@@ -321,7 +321,7 @@ function setupSpotlights() {
 }
 
 const gltfLoader = new GLTFLoader();
-const modelUrl = './models/cube-beveled-silver.glb';
+const modelUrl = './models/HoodedCory_PlanarFace_BigWireframe.glb';
 
 gltfLoader.load(
     modelUrl,

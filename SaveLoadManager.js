@@ -24,7 +24,7 @@ export class SaveLoadManager {    constructor() {
      * Save a behavior configuration
      * @param {string} name - Name to save the behavior as
      * @param {object} config - Behavior configuration object
-     * @param {string} behaviorType - Type of behavior (default, wireframe, etc.)
+     * @param {string} behaviorType - Type of behavior (default, start, array_1, etc.)
      */
     saveBehavior(name, config, behaviorType = 'default') {
         const behaviorData = {

@@ -25,6 +25,7 @@ export function getRandomTargetVertex(verticesArray) {
 
 export class LaserSystem {
     // Global cylinder mesh parameters
+    // Set radius here
     static CYLINDER_RADIUS = 0.005;
     static CYLINDER_SEGMENTS = 12;
     static CYLINDER_MATERIAL = new THREE.MeshStandardMaterial({
@@ -263,6 +264,89 @@ export class LaserSystem {
         });
     }
 
+    /**
+     * Update laser origins and targets from behaviors
+     */
+    updateLaserFromBehavior(laserIndex, origin, target) {
+        if (this.lasers[laserIndex]) {
+            this.lasers[laserIndex].origin = origin.clone();
+            this.lasers[laserIndex].target = target.clone();
+        }
+    }
+
+    /**
+     * Update all laser geometries so that each laser (line and cylinder) reflects off object surfaces using the face normal.
+     * This is a global directive for all lasers.
+     */
+    updateAllLaserGeometries() {
+        for (const laser of this.lasers) {
+            // Start at origin, initial direction
+            const points = [];
+            let currentOrigin = laser.origin.clone();
+            let currentDirection = new THREE.Vector3().subVectors(laser.target, laser.origin).normalize();
+            points.push(currentOrigin.clone());
+            
+            let bounces = 0;
+            const maxBounces = laser.config.MAX_BOUNCES || 3;
+            const maxLength = laser.config.MAX_LENGTH || 20;
+            
+            while (bounces < maxBounces) {
+                const intersects = this.raycast(currentOrigin, currentDirection);
+                if (intersects && intersects.length > 0) {
+                    const hit = intersects[0];
+                    const hitPoint = hit.point.clone();
+                    points.push(hitPoint);
+                    
+                    console.log(`🔄 Laser hit at:`, hitPoint, 'bounce:', bounces);
+                    
+                    // Get the face normal and transform to world space
+                    let normal = hit.face ? hit.face.normal.clone() : new THREE.Vector3(0, 1, 0);
+                    const normalMatrix = new THREE.Matrix3().getNormalMatrix(hit.object.matrixWorld);
+                    normal.applyMatrix3(normalMatrix).normalize();
+                    
+                    // Ensure normal points away from incoming ray
+                    if (currentDirection.dot(normal) > 0) {
+                        normal.negate();
+                    }
+                    
+                    // Reflect the direction off the surface normal
+                    currentDirection.reflect(normal).normalize();
+                    
+                    // Move slightly off the surface to prevent self-intersection
+                    currentOrigin = hitPoint.clone().add(currentDirection.clone().multiplyScalar(0.001));
+                    bounces++;
+                } else {
+                    // No hit, extend laser to max length
+                    console.log(`❌ No intersection found for laser, extending to max length`);
+                    points.push(currentOrigin.clone().add(currentDirection.clone().multiplyScalar(maxLength)));
+                    break;
+                }
+            }
+            
+            // Update line geometry with all reflection points
+            if (laser.line && laser.line.geometry) {
+                laser.line.geometry.setFromPoints(points);
+                laser.line.geometry.attributes.position.needsUpdate = true;
+            }
+            
+            // Update cylinder mesh to match first segment only
+            if (laser.cylinder) {
+                if (points.length >= 2) {
+                    const start = points[0];
+                    const end = points[1];
+                    const delta = new THREE.Vector3().subVectors(end, start);
+                    const length = delta.length();
+                    laser.cylinder.position.copy(start).addScaledVector(delta, 0.5);
+                    laser.cylinder.scale.set(1, length, 1);
+                    laser.cylinder.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), delta.clone().normalize());
+                    laser.cylinder.visible = true;
+                } else {
+                    laser.cylinder.visible = false;
+                }
+            }
+        }
+    }
+
     // Core infrastructure only
     activeBehaviors = [];
     raycaster = new THREE.Raycaster();
@@ -301,11 +385,12 @@ export class LaserSystem {
         this.lasers = [];
     }
 
-    // Main update loop - delegates to behaviors
+    // Main update loop - delegates to behaviors and updates all laser geometries
     update(deltaTime, clock) {
         this.activeBehaviors.forEach(behavior => {
             behavior.update(deltaTime, clock, this);
         });
+        this.updateAllLaserGeometries(); // Always update all laser geometries globally
     }
 
     // Utility methods for behaviors to use
