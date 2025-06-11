@@ -167,6 +167,10 @@ export class CLI {
                 description: 'Show factory help',
                 usage: 'factory',
                 execute: () => this.showFactoryHelp()
+            },            create: {
+                description: 'Create array effect behavior: 4 lasers spread into 32 over time',
+                usage: 'create <new_filename>',
+                execute: (args) => this.createBehavior(args)
             }
         };
     }
@@ -708,5 +712,201 @@ export class CLI {
         this.presetManager.clearAll();
         this.addOutput('🧹 Cleared all behaviors and scene-default', 'result');
         this.addOutput('Page will start empty on next reload', 'info');
+    }
+
+    createBehavior(args) {
+        if (!this.presetManager) {
+            this.addOutput('PresetManager not available!', 'error');
+            return;
+        }
+
+        if (args.length < 1) {
+            this.addOutput('Usage: create <new_filename>', 'error');
+            this.addOutput('Example: create array_1', 'info');
+            return;
+        }
+
+        const newName = args[0].replace(/[^a-zA-Z0-9_]/g, '').toLowerCase();
+        if (!newName) {
+            this.addOutput('Invalid filename. Use only letters, numbers, and underscores.', 'error');
+            return;
+        }
+
+        // Check if behavior already exists
+        if (this.presetManager.getSaveLoadManager().savedBehaviors.has(newName)) {
+            this.addOutput(`❌ Behavior "${newName}" already exists!`, 'error');
+            return;
+        }
+
+        try {
+            // Generate the new behavior class code
+            const className = this._capitalize(newName);
+            const newBehaviorCode = this._generateBehaviorCode(newName, className);
+            
+            // Register the behavior in memory
+            this._registerBehaviorInMemory(newName, className, newBehaviorCode);
+            
+            // Auto-save the behavior
+            this.presetManager.saveBehavior(newName, { laserColor: 0x0000ff }, newName);
+            
+            this.addOutput(`✅ Created new behavior: "${newName}"`, 'result');
+            this.addOutput(`✅ Registered "${newName}" in behaviors registry`, 'result');
+            this.addOutput(`✅ Auto-saved "${newName}" behavior`, 'result');
+            this.addOutput('', 'info');
+            this.addOutput('📄 To create the physical file, copy this code:', 'info');
+            this.addOutput('', 'info');
+            this.addOutput(`File: behaviors/${newName}.js`, 'code');
+            this.addOutput('', 'info');
+            this.addOutput(newBehaviorCode, 'code');
+            this.addOutput('', 'info');
+            this.addOutput(`Now you can use: load-behavior ${newName}`, 'result');
+            
+        } catch (error) {
+            this.addOutput(`❌ Error creating behavior: ${error.message}`, 'error');
+        }
+    }
+
+    _capitalize(str) {
+        return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    _generateBehaviorCode(newName, className) {
+        return `// Behavior${className}.js - Four blue lasers from corners targeting the 3D model (clone of start.js)
+import * as THREE from 'three';
+
+export class Behavior${className} {
+    constructor(config = {}) {
+        this.laserColor = config.laserColor || 0x0000ff;
+        this.lasers = [];
+        this.target = config.target || null; // Should be a THREE.Object3D
+        this.id = '${newName}';
+    }
+
+    // Called to initialize lasers
+    init(laserSystem) {
+        this.lasers = [];
+        const scene = laserSystem.getScene();
+        const camera = laserSystem.getCamera();
+        const target = laserSystem.getModel();
+        
+        const corners = this._getScreenCorners(camera, scene);
+        // Defensive: ensure target and target.position exist
+        const targetPos = (target && target.position) ? target.position.clone() : new THREE.Vector3(0, 0, 0);
+        
+        for (let i = 0; i < 4; i++) {
+            // Defensive: ensure corners[i] is valid
+            const start = corners[i] ? corners[i].clone() : new THREE.Vector3(0, 0, 0);
+            const laser = this._createLaser(start, targetPos);
+            scene.add(laser);
+            this.lasers.push(laser);
+        }
+    }
+
+    // Called every frame to update laser directions
+    update(deltaTime, clock, laserSystem) {
+        const camera = laserSystem.getCamera();
+        const target = laserSystem.getModel();
+        
+        // Defensive: ensure target and target.position exist
+        if (!target || !target.position) return;
+        
+        const corners = this._getScreenCorners(camera);
+        for (let i = 0; i < 4; i++) {
+            const laser = this.lasers[i];
+            if (!laser) continue;
+            // Defensive: ensure corners[i] is valid
+            const start = corners[i] ? corners[i] : new THREE.Vector3(0, 0, 0);
+            const positions = laser.geometry.attributes.position.array;
+            positions[0] = start.x;
+            positions[1] = start.y;
+            positions[2] = start.z;
+            positions[3] = target.position.x;
+            positions[4] = target.position.y;
+            positions[5] = target.position.z;
+            laser.geometry.attributes.position.needsUpdate = true;
+        }
+    }
+
+    // Helper to create a laser (THREE.Line) from start to end
+    _createLaser(start, end) {
+        const geometry = new THREE.BufferGeometry();
+        const positions = new Float32Array([
+            start.x, start.y, start.z,
+            end.x, end.y, end.z
+        ]);
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+        const material = new THREE.LineBasicMaterial({ color: this.laserColor });
+        return new THREE.Line(geometry, material);
+    }
+
+    // Get world positions for the 4 screen corners
+    _getScreenCorners(camera, scene) {
+        // Defensive: ensure camera is defined and has projectionMatrixInverse
+        if (!camera || typeof camera.unproject !== 'function' || !camera.projectionMatrixInverse) {
+            // Fallback: return corners at visible positions
+            return [
+                new THREE.Vector3(-10, 10, -10),
+                new THREE.Vector3(10, 10, -10),
+                new THREE.Vector3(-10, -10, -10),
+                new THREE.Vector3(10, -10, -10)
+            ];
+        }
+        // NDC corners: [(-1,1), (1,1), (-1,-1), (1,-1)]
+        const ndc = [
+            new THREE.Vector3(-1, 1, -1),
+            new THREE.Vector3(1, 1, -1),
+            new THREE.Vector3(-1, -1, -1),
+            new THREE.Vector3(1, -1, -1)
+        ];
+        // Project from NDC to world at near plane
+        return ndc.map(v => v.clone().unproject(camera));
+    }    // Cleanup method to remove lasers from the scene
+    cleanup(laserSystem) {
+        // Remove lasers from the scene
+        if (this.lasers && laserSystem && laserSystem.getScene) {
+            const scene = laserSystem.getScene();
+            this.lasers.forEach(laser => scene.remove(laser));
+        }
+        this.lasers = [];
+    }
+};
+export default Behavior${className};`;
+    }
+
+    _registerBehaviorInMemory(newName, className, newBehaviorCode) {
+        try {
+            // Create a data URL containing the behavior code
+            const blob = new Blob([newBehaviorCode], { type: 'application/javascript' });
+            const url = URL.createObjectURL(blob);
+            
+            // Dynamically import and register the behavior
+            import(url).then(module => {
+                const BehaviorClass = module.default;
+                
+                // Add to behaviors registry if it exists
+                if (window.behaviors) {
+                    window.behaviors[newName] = (config = {}) => new BehaviorClass(config);
+                }
+                
+                // Add to savedBehaviorConfigs if it exists
+                if (window.savedBehaviorConfigs) {
+                    window.savedBehaviorConfigs[newName] = { 
+                        laserColor: 0x0000ff, 
+                        _behaviorType: newName 
+                    };
+                }
+                
+                // Clean up the blob URL
+                URL.revokeObjectURL(url);
+                
+                this.addOutput(`✅ Dynamically registered "${newName}" behavior`, 'result');
+            }).catch(error => {
+                this.addOutput(`⚠️ Could not dynamically register behavior: ${error.message}`, 'error');
+                this.addOutput('The behavior was created but needs manual registration in behaviors.js', 'info');
+            });
+              } catch (error) {
+            this.addOutput(`⚠️ Dynamic registration failed: ${error.message}`, 'error');
+            this.addOutput('The behavior was created but needs manual registration in behaviors.js', 'info');
+        }
     }
 }

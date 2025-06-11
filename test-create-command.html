@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Command Test</title>
+    <style>
+        body {
+            font-family: monospace;
+            background: #000;
+            color: #00ff00;
+            padding: 20px;
+        }
+        .output {
+            white-space: pre-wrap;
+            margin-bottom: 10px;
+        }
+        .error { color: #ff0000; }
+        .result { color: #00ff00; }
+        .info { color: #ffffff; }
+        .command { color: #ffff00; }
+        .code { 
+            color: #00ffff; 
+            background: #111;
+            padding: 10px;
+            border-left: 3px solid #00ffff;
+            margin: 10px 0;
+        }
+        input {
+            background: #111;
+            color: #00ff00;
+            border: 1px solid #333;
+            padding: 5px;
+            width: 100%;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>Create Command Test</h1>
+    <div id="output"></div>
+    <input type="text" id="commandInput" placeholder="Type 'create test_behavior' to test...">
+    
+    <script type="module">
+        import { CLI } from './CLI.js';
+        import { PresetManager } from './PresetManager.js';
+        import { LaserFactory } from './LaserFactory.js';
+        
+        // Mock the necessary components for testing
+        const mockLaserSystem = {
+            getScene: () => ({ add: () => {}, remove: () => {} }),
+            getCamera: () => ({ unproject: () => {}, projectionMatrixInverse: true }),
+            getModel: () => ({ position: { x: 0, y: 0, z: 0, clone: () => ({ x: 0, y: 0, z: 0 }) } })
+        };
+        
+        const mockRenderer = {};
+        
+        // Set up global objects that the CLI expects
+        window.scene = mockLaserSystem.getScene();
+        window.renderer = mockRenderer;
+        
+        // Initialize the CLI system
+        const cli = new CLI();
+        const presetManager = new PresetManager(mockLaserSystem, mockRenderer);
+        const laserFactory = new LaserFactory(mockLaserSystem);
+        
+        cli.setPresetManager(presetManager);
+        cli.setLaserFactory(laserFactory);
+        
+        // Override CLI output to display in our test page
+        cli.addOutput = function(text, type = 'result') {
+            const output = document.getElementById('output');
+            const div = document.createElement('div');
+            div.className = `output ${type}`;
+            div.textContent = text;
+            output.appendChild(div);
+            output.scrollTop = output.scrollHeight;
+        };
+        
+        // Handle command input
+        const input = document.getElementById('commandInput');
+        input.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const command = input.value.trim();
+                if (command) {
+                    cli.executeCommand(command);
+                    input.value = '';
+                }
+            }
+        });
+        
+        // Initial message
+        cli.addOutput('🚀 Create Command Test Ready!', 'info');
+        cli.addOutput('Try: create test_behavior', 'info');
+        cli.addOutput('Try: create array_2', 'info');
+        cli.addOutput('Try: help', 'info');
+    </script>
+</body>
+</html>

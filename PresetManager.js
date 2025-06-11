@@ -27,10 +27,17 @@ export class PresetManager {
     /**
      * Load the saved default behavior or bank (called on startup)
      */
-    loadSavedDefault() {
-        const defaultData = this.saveLoadManager.loadSavedDefault();
+    loadSavedDefault() {        const defaultData = this.saveLoadManager.loadSavedDefault();
         if (!defaultData) {
-            console.log('💡 No saved default found - starting with no lasers');
+            console.log('💡 No saved default found - loading fallback behavior');
+            // Load fallback default behavior when no saved defaults exist
+            this.laserSystem.clearAllBehaviors();
+            
+            // Load red_default as fallback
+            const fallbackBehavior = behaviors.red_default({ laserColor: 0xff0000 });
+            this.laserSystem.addBehavior(fallbackBehavior);
+            console.log('✅ Loaded fallback behavior: red_default');
+            
             // Still load helper state even if no default behaviors/banks
             this.loadSceneDefaultHelpers();
             return;

@@ -1,3 +1,7 @@
+/////////////////
+//////Depricated
+/////////////////
+
 🎯 LASER FACTORY SYSTEM - COMPLETE!
 ✅ Speed Increase Implemented
 Laser origin changes are now 2x faster (STILLNESS_LIMIT: 0.167s → 0.083s)
