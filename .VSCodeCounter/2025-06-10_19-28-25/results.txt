@@ -1,0 +1,60 @@
+Date : 2025-06-10 19:28:25
+Directory : c:\ravelasers-base
+Total : 30 files,  4116 codes, 463 comments, 791 blanks, all 5370 lines
+
+Languages
++------------+------------+------------+------------+------------+------------+
+| language   | files      | code       | comment    | blank      | total      |
++------------+------------+------------+------------+------------+------------+
+| JavaScript |         19 |      2,854 |        459 |        494 |      3,807 |
+| Markdown   |          7 |        930 |          0 |        246 |      1,176 |
+| HTML       |          3 |        217 |          1 |         29 |        247 |
+| PostCSS    |          1 |        115 |          3 |         22 |        140 |
++------------+------------+------------+------------+------------+------------+
+
+Directories
++-------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| path                                                                    | files      | code       | comment    | blank      | total      |
++-------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| .                                                                       |         30 |      4,116 |        463 |        791 |      5,370 |
+| . (Files)                                                               |         14 |      2,546 |        386 |        432 |      3,364 |
+| Documentation                                                           |          6 |        928 |          0 |        245 |      1,173 |
+| behaviors                                                               |         10 |        642 |         77 |        114 |        833 |
++-------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+
+Files
++-------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| filename                                                                | language   | code       | comment    | blank      | total      |
++-------------------------------------------------------------------------+------------+------------+------------+------------+------------+
+| c:\ravelasers-base\CLI.js                                               | JavaScript |        789 |         23 |        102 |        914 |
+| c:\ravelasers-base\Documentation\CLI-Commands.md                        | Markdown   |        400 |          0 |        109 |        509 |
+| c:\ravelasers-base\Documentation\create-command-guide.md                | Markdown   |         96 |          0 |         33 |        129 |
+| c:\ravelasers-base\Documentation\implementation-summary.md              | Markdown   |        129 |          0 |         32 |        161 |
+| c:\ravelasers-base\Documentation\laser-factory-guide.md                 | Markdown   |        157 |          0 |         38 |        195 |
+| c:\ravelasers-base\Documentation\scene-default-system.md                | Markdown   |         99 |          0 |         28 |        127 |
+| c:\ravelasers-base\Documentation\🎯 LASER FACTORY SYSTEM - COMPLETE!.md | Markdown   |         47 |          0 |          5 |         52 |
+| c:\ravelasers-base\LaserFactory.js                                      | JavaScript |        231 |         67 |         45 |        343 |
+| c:\ravelasers-base\LaserSystem.js                                       | JavaScript |        208 |         24 |         54 |        286 |
+| c:\ravelasers-base\PresetManager.js                                     | JavaScript |        209 |         75 |         55 |        339 |
+| c:\ravelasers-base\README.md                                            | Markdown   |          2 |          0 |          1 |          3 |
+| c:\ravelasers-base\SaveLoadManager.js                                   | JavaScript |        289 |         97 |         36 |        422 |
+| c:\ravelasers-base\banks.js                                             | JavaScript |         34 |         13 |         10 |         57 |
+| c:\ravelasers-base\behaviors\BehaviorDefault.js                         | JavaScript |        145 |          8 |         35 |        188 |
+| c:\ravelasers-base\behaviors\array_1.js                                 | JavaScript |         77 |         15 |         11 |        103 |
+| c:\ravelasers-base\behaviors\behaviors.js                               | JavaScript |         44 |          9 |          8 |         61 |
+| c:\ravelasers-base\behaviors\blue_bounce.js                             | JavaScript |         12 |          0 |          2 |         14 |
+| c:\ravelasers-base\behaviors\green_lasers.js                            | JavaScript |         11 |          0 |          2 |         13 |
+| c:\ravelasers-base\behaviors\red_default.js                             | JavaScript |         11 |          0 |          2 |         13 |
+| c:\ravelasers-base\behaviors\start.js                                   | JavaScript |         92 |         20 |          8 |        120 |
+| c:\ravelasers-base\behaviors\static_red.js                              | JavaScript |         68 |          8 |          6 |         82 |
+| c:\ravelasers-base\behaviors\wireframe.js                               | JavaScript |        170 |         17 |         38 |        225 |
+| c:\ravelasers-base\behaviors\yellow_wide.js                             | JavaScript |         12 |          0 |          2 |         14 |
+| c:\ravelasers-base\demo.js                                              | JavaScript |        126 |         11 |         17 |        154 |
+| c:\ravelasers-base\index.html                                           | HTML       |         33 |          1 |          3 |         37 |
+| c:\ravelasers-base\lasersaveinstructions.js                             | JavaScript |          5 |          5 |          4 |         14 |
+| c:\ravelasers-base\main.js                                              | JavaScript |        321 |         67 |         57 |        445 |
+| c:\ravelasers-base\style.css                                            | PostCSS    |        115 |          3 |         22 |        140 |
+| c:\ravelasers-base\test-create-command.html                             | HTML       |         90 |          0 |         10 |        100 |
+| c:\ravelasers-base\test-face-extraction.html                            | HTML       |         94 |          0 |         16 |        110 |
+| Total                                                                   |            |      4,116 |        463 |        791 |      5,370 |
++-------------------------------------------------------------------------+------------+------------+------------+------------+------------+

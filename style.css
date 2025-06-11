@@ -1,0 +1,139 @@
+body {
+    margin: 0;
+    overflow: hidden;
+}
+
+canvas {
+    display: block;
+}
+
+/* CLI Interface */
+#cli-container {
+    position: fixed;
+    left: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 350px;
+    background: rgba(0, 0, 0, 0.85);
+    border: 2px solid #00ff00;
+    border-radius: 8px;
+    font-family: 'Courier New', monospace;
+    color: #00ff00;
+    padding: 15px;
+    z-index: 1000;
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
+    backdrop-filter: blur(5px);
+}
+
+#cli-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    padding-bottom: 5px;
+    border-bottom: 1px solid #00ff00;
+}
+
+#cli-title {
+    font-size: 14px;
+    font-weight: bold;
+}
+
+#cli-toggle {
+    background: none;
+    border: 1px solid #00ff00;
+    color: #00ff00;
+    padding: 2px 8px;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 12px;
+    border-radius: 3px;
+}
+
+#cli-toggle:hover {
+    background: rgba(0, 255, 0, 0.1);
+}
+
+#cli-output {
+    height: 200px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #00ff00;
+    padding: 8px;
+    margin-bottom: 10px;
+    font-size: 12px;
+    line-height: 1.4;
+    border-radius: 3px;
+}
+
+#cli-input-container {
+    display: flex;
+    align-items: center;
+}
+
+#cli-prompt {
+    color: #00ff00;
+    margin-right: 5px;
+    font-weight: bold;
+}
+
+#cli-input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: #00ff00;
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    padding: 5px;
+}
+
+.cli-output-line {
+    margin-bottom: 5px;
+}
+
+.cli-command {
+    color: #ffff00;
+}
+
+.cli-result {
+    color: #00ff00;
+}
+
+.cli-error {
+    color: #ff4444;
+}
+
+.cli-info {
+    color: #44ccff;
+}
+
+/* Scrollbar styling for CLI output */
+#cli-output::-webkit-scrollbar {
+    width: 6px;
+}
+
+#cli-output::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3);
+}
+
+#cli-output::-webkit-scrollbar-thumb {
+    background: #00ff00;
+    border-radius: 3px;
+}
+
+/* Collapsed state */
+#cli-container.collapsed {
+    width: 120px;
+    height: 40px;
+    padding: 8px 15px;
+    opacity: 0.5; /*.2= 80% transparent */
+}
+
+#cli-container.collapsed #cli-content {
+    display: none;
+}
+
+#cli-container.collapsed #cli-title {
+    font-size: 12px;
+}
