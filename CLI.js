@@ -101,15 +101,10 @@ export class CLI {
                 usage: 'save <name> <color> [bounces] [radius]',
                 execute: (args) => this.saveBehavior(args)
             },
-            'load-behavior': {
-                description: 'Load a behavior',
-                usage: 'load-behavior <name>',
-                execute: (args) => this.loadBehavior(args)
-            },
-            'load-bank': {
-                description: 'Load a bank',
-                usage: 'load-bank <name>',
-                execute: (args) => this.loadBank(args)
+            load: {
+                description: 'Load a behavior or bank by name',
+                usage: 'load <name>',
+                execute: (args) => this.loadAny(args)
             },
             'save-bank': {
                 description: 'Save a bank with behaviors',
@@ -275,83 +270,27 @@ export class CLI {
         } catch (error) {
             this.addOutput(`Error saving behavior: ${error.message}`, 'error');
         }
-    }    loadBehavior(args) {
+    }    loadAny(args) {
         if (!this.presetManager) {
             this.addOutput('PresetManager not available!', 'error');
             return;
         }
-
         if (args.length < 1) {
-            this.addOutput('Usage: load-behavior <name>', 'error');
+            this.addOutput('Usage: load <name>', 'error');
             return;
         }
-
         const name = args[0];
+        // Try to load as behavior first
         if (this.presetManager.loadBehavior(name)) {
             this.addOutput(`✅ Loaded behavior: ${name} (set as default)`, 'result');
-        } else {
-            this.addOutput(`❌ Failed to load behavior: ${name}`, 'error');
-        }
-    }
-
-    loadBank(args) {
-        if (!this.presetManager) {
-            this.addOutput('PresetManager not available!', 'error');
             return;
         }
-
-        if (args.length < 1) {
-            this.addOutput('Usage: load-bank <name>', 'error');
-            return;
-        }
-
-        const name = args[0];
+        // If not a behavior, try to load as bank
         if (this.presetManager.loadBank(name)) {
             this.addOutput(`✅ Loaded bank: ${name} (set as default)`, 'result');
-        } else {
-            this.addOutput(`❌ Failed to load bank: ${name}`, 'error');
-        }
-    }
-
-    saveBank(args) {
-        if (!this.presetManager) {
-            this.addOutput('PresetManager not available!', 'error');
             return;
         }
-
-        if (args.length < 2) {
-            this.addOutput('Usage: save-bank <name> <behavior1> [behavior2] ...', 'error');
-            this.addOutput('Example: save-bank my_mix red_default green_lasers', 'info');
-            return;
-        }
-
-        const [bankName, ...behaviorNames] = args;
-        if (this.presetManager.saveBank(bankName, behaviorNames)) {
-            this.addOutput(`✅ Saved bank: ${bankName}`, 'result');
-        } else {
-            this.addOutput(`❌ Failed to save bank: ${bankName}`, 'error');
-        }
-    }
-
-    listItems(args) {
-        if (!this.presetManager) {
-            this.addOutput('PresetManager not available!', 'error');
-            return;
-        }
-
-        const type = args[0] ? args[0].toLowerCase() : 'both';
-
-        if (type === 'behaviors' || type === 'both') {
-            const behaviors = this.presetManager.listBehaviors();
-            this.addOutput(`Behaviors (${behaviors.length}):`, 'info');
-            behaviors.forEach(name => this.addOutput(`  • ${name}`, 'result'));
-        }
-
-        if (type === 'banks' || type === 'both') {
-            const banks = this.presetManager.listBanks();
-            this.addOutput(`Banks (${banks.length}):`, 'info');
-            banks.forEach(name => this.addOutput(`  • ${name}`, 'result'));
-        }
+        this.addOutput(`❌ Could not find behavior or bank named: ${name}`, 'error');
     }    // Cleanup method to remove lasers from the scene
     cleanup(laserSystem) {
         // Remove lasers from the scene
@@ -360,5 +299,23 @@ export class CLI {
             this.lasers.forEach(laser => scene.remove(laser));
         }
         this.lasers = [];
+    }
+
+    listItems(args) {
+        if (!this.presetManager) {
+            this.addOutput('PresetManager not available!', 'error');
+            return;
+        }
+        const type = args[0] ? args[0].toLowerCase() : 'both';
+        if (type === 'behaviors' || type === 'both') {
+            const behaviors = this.presetManager.listBehaviors();
+            this.addOutput(`Behaviors (${behaviors.length}):`, 'info');
+            behaviors.forEach(name => this.addOutput(`  • ${name}`, 'result'));
+        }
+        if (type === 'banks' || type === 'both') {
+            const banks = this.presetManager.listBanks();
+            this.addOutput(`Banks (${banks.length}):`, 'info');
+            banks.forEach(name => this.addOutput(`  • ${name}`, 'result'));
+        }
     }
 }
