@@ -14,10 +14,11 @@ export class BehaviorWireframe {
         this.MAX_BRIGHTNESS = config.MAX_BRIGHTNESS || 2.5;
         this.MAX_LENGTH = config.MAX_LENGTH || 20;
         this.MAX_BOUNCES = config.MAX_BOUNCES || 3;
-        this.laserColor = new THREE.Color(config.laserColor || 0x00ff00); // Default to green for wireframe
-          // Laser objects
+        this.laserColor = new THREE.Color(config.laserColor || 0x00ff00); // Default to green for wireframe        // Laser objects
         this.laserLines = [];
+        this.laserCylinders = []; // New: cylinder meshes for each laser segment
         this.materials = [];
+        this.cylinderMaterials = []; // New: materials for cylinder meshes
         this.origins = [];
         this.directions = [];
         this.targets = [];
@@ -36,8 +37,7 @@ export class BehaviorWireframe {
         this._setupLasers(laserSystem);
         this._initializeLaserPositions(laserSystem);
     }
-    
-    _setupLasers(laserSystem) {
+      _setupLasers(laserSystem) {
         const scene = laserSystem.getScene();
         
         // Create 4 lasers
@@ -53,8 +53,19 @@ export class BehaviorWireframe {
             this.origins.push(new THREE.Vector3());
             this.directions.push(new THREE.Vector3(0, 0, -1));
             this.targets.push(new THREE.Vector3());
+            
+            // Create cylinder material for this laser
+            const cylinderMaterial = new THREE.MeshBasicMaterial({ 
+                color: this.laserColor,
+                transparent: true,
+                opacity: 0.8
+            });
+            this.cylinderMaterials.push(cylinderMaterial);
+            
+            // Initialize empty array for cylinder segments
+            this.laserCylinders.push([]);
         }
-    }      _initializeLaserPositions(laserSystem) {
+    }_initializeLaserPositions(laserSystem) {
         const controls = laserSystem.getControls();
         const targetCenter = controls ? controls.target : new THREE.Vector3();
         
@@ -125,8 +136,7 @@ export class BehaviorWireframe {
             console.log(`🔄 Laser ${i} retargeted to face center:`, this.targets[i], 'with normal:', randomFace.normal);
         }
     }
-    
-    _updatePulsing(clock) {
+      _updatePulsing(clock) {
         const currentPulseFrequency = this.BASE_PULSE_FREQUENCY;
         const sharedPulseIntensity = (Math.sin(clock.elapsedTime * currentPulseFrequency * Math.PI * 2) + 1) / 2;
         const brightnessScalar = this.MIN_BRIGHTNESS + (sharedPulseIntensity * (this.MAX_BRIGHTNESS - this.MIN_BRIGHTNESS));
@@ -136,18 +146,55 @@ export class BehaviorWireframe {
         this.materials.forEach(material => {
             material.color.setHex(currentLaserColorHex).multiplyScalar(brightnessScalar);
         });
+        
+        // Update cylinder materials with same pulsing
+        this.cylinderMaterials.forEach(material => {
+            material.color.setHex(currentLaserColorHex).multiplyScalar(brightnessScalar);
+        });
     }
-    
-    _updateLaserGeometry(laserSystem) {
+      _updateLaserGeometry(laserSystem) {
         for (let i = 0; i < this.laserLines.length; i++) {
-            this._updateSingleLaserGeometry(this.laserLines[i], this.origins[i], this.directions[i], laserSystem);
+            this._updateSingleLaserGeometry(this.laserLines[i], this.origins[i], this.directions[i], laserSystem, i);
         }
     }
-      _updateSingleLaserGeometry(laserLine, origin, direction, laserSystem) {
+    
+    // Helper method to create a cylinder between two points
+    _createCylinderSegment(start, end, material) {
+        const direction = new THREE.Vector3().subVectors(end, start);
+        const length = direction.length();
+        const radius = 0.01; // Thin cylinder radius
+        
+        const geometry = new THREE.CylinderGeometry(radius, radius, length, 8);
+        const cylinder = new THREE.Mesh(geometry, material);
+        
+        // Position cylinder at midpoint
+        cylinder.position.copy(start).add(end).multiplyScalar(0.5);
+        
+        // Align cylinder with the direction vector
+        cylinder.lookAt(end);
+        cylinder.rotateX(Math.PI / 2); // Cylinders are created along Y-axis, rotate to align with direction
+        
+        return cylinder;
+    }
+    
+    // Helper method to clear existing cylinder segments for a laser
+    _clearCylinderSegments(laserIndex, scene) {
+        if (this.laserCylinders[laserIndex]) {
+            this.laserCylinders[laserIndex].forEach(cylinder => {
+                scene.remove(cylinder);
+                cylinder.geometry.dispose();
+            });
+            this.laserCylinders[laserIndex] = [];
+        }
+    }      _updateSingleLaserGeometry(laserLine, origin, direction, laserSystem, laserIndex) {
+        const scene = laserSystem.getScene();
         const points = [];
         let currentOrigin = origin.clone();
         let currentDirection = direction.clone();
         points.push(currentOrigin.clone());
+
+        // Clear existing cylinder segments for this laser
+        this._clearCylinderSegments(laserIndex, scene);
 
         for (let i = 0; i < this.MAX_BOUNCES; i++) {
             const intersects = laserSystem.raycast(currentOrigin, currentDirection);
@@ -156,6 +203,15 @@ export class BehaviorWireframe {
                 const intersection = intersects[0];
                 const impactPoint = intersection.point;
                 points.push(impactPoint.clone());
+
+                // Create cylinder segment for this laser path
+                const cylinder = this._createCylinderSegment(
+                    currentOrigin.clone(), 
+                    impactPoint.clone(), 
+                    this.cylinderMaterials[laserIndex]
+                );
+                scene.add(cylinder);
+                this.laserCylinders[laserIndex].push(cylinder);
 
                 // Debug log for first bounce
                 if (i === 0) {
@@ -178,14 +234,34 @@ export class BehaviorWireframe {
                 currentOrigin.copy(impactPoint).add(currentDirection.clone().multiplyScalar(0.001));
 
                 if (i === this.MAX_BOUNCES - 1) {
-                    points.push(currentOrigin.clone().add(currentDirection.clone().multiplyScalar(this.MAX_LENGTH)));
+                    const finalPoint = currentOrigin.clone().add(currentDirection.clone().multiplyScalar(this.MAX_LENGTH));
+                    points.push(finalPoint);
+                    
+                    // Create final cylinder segment
+                    const finalCylinder = this._createCylinderSegment(
+                        currentOrigin.clone(), 
+                        finalPoint, 
+                        this.cylinderMaterials[laserIndex]
+                    );
+                    scene.add(finalCylinder);
+                    this.laserCylinders[laserIndex].push(finalCylinder);
                 }
             } else {
                 // No intersection found - extend laser to max length
                 if (i === 0) {
                     console.warn('❌ No surface intersection found for laser');
                 }
-                points.push(currentOrigin.clone().add(currentDirection.clone().multiplyScalar(this.MAX_LENGTH)));
+                const finalPoint = currentOrigin.clone().add(currentDirection.clone().multiplyScalar(this.MAX_LENGTH));
+                points.push(finalPoint);
+                
+                // Create cylinder segment for non-intersecting laser
+                const cylinder = this._createCylinderSegment(
+                    currentOrigin.clone(), 
+                    finalPoint, 
+                    this.cylinderMaterials[laserIndex]
+                );
+                scene.add(cylinder);
+                this.laserCylinders[laserIndex].push(cylinder);
                 break;
             }
         }
@@ -213,13 +289,27 @@ export class BehaviorWireframe {
         };
     }    cleanup(laserSystem) {
         const scene = laserSystem.getScene();
+        
+        // Remove wireframe lines
         this.laserLines.forEach(line => scene.remove(line));
         this.laserLines = [];
         this.materials = [];
+        
+        // Remove cylinder meshes
+        this.laserCylinders.forEach(cylinderArray => {
+            cylinderArray.forEach(cylinder => {
+                scene.remove(cylinder);
+                cylinder.geometry.dispose();
+            });
+        });
+        this.laserCylinders = [];
+        this.cylinderMaterials.forEach(material => material.dispose());
+        this.cylinderMaterials = [];
+        
         this.origins = [];
         this.directions = [];
         this.targets = [];
         this.targetFaces = [];
-        console.log('BehaviorWireframe: Cleaned up wireframe behavior');
+        console.log('BehaviorWireframe: Cleaned up wireframe behavior (wireframes and cylinders)');
     }
 }

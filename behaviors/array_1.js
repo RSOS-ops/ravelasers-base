@@ -17,25 +17,31 @@ export class BehaviorArray_1 {    constructor(config = {}) {
         this.lasersPerCorner = 8; // Each corner creates 8 lasers
         this.spreadAngle = Math.PI / 4; // 45 degrees spread angle
         this.isArrayExpanded = false;
-        
-        // Store original laser data for animation
+          // Store original laser data for animation
         this.originalLasers = []; // Original 4 corner lasers
         this.oppositeLasers = []; // 4 opposite lasers targeting the object
         this.arrayLasers = []; // All 32 lasers (4 corners × 8 lasers each)
         this.oppositeArrayLasers = []; // All 32 opposite lasers (4 opposite corners × 8 lasers each)
         
-        // Surface spread data for each corner
+        // Cylinder mesh arrays
+        this.laserCylinders = []; // Cylinder meshes for all lasers
+        this.cylinderMaterials = []; // Materials for cylinder meshes
+          // Surface spread data for each corner
         this.hitFaces = []; // Store hit face info for each corner laser
         this.surfaceCoords = []; // Store local coordinate systems for each hit face
         this.oppositeHitFaces = []; // Store hit face info for each opposite laser
         this.oppositeSurfaceCoords = []; // Store local coordinate systems for each opposite hit face
-    }    // Called to initialize lasers
+    }
+
+    // Called to initialize lasers
     init(laserSystem) {
         this.lasers = [];
         this.originalLasers = [];
         this.oppositeLasers = [];
         this.arrayLasers = [];
         this.oppositeArrayLasers = [];
+        this.laserCylinders = [];
+        this.cylinderMaterials = [];
         this.hitFaces = [];
         this.surfaceCoords = [];
         this.oppositeHitFaces = [];
@@ -57,6 +63,7 @@ export class BehaviorArray_1 {    constructor(config = {}) {
             const start = corners[i] ? corners[i].clone() : new THREE.Vector3(0, 0, 0);
             const laser = this._createLaser(start, targetPos);
             scene.add(laser);
+            scene.add(laser.userData.cylinder); // Add the cylinder mesh
             
             // Store original laser data
             this.originalLasers.push({
@@ -80,10 +87,11 @@ export class BehaviorArray_1 {    constructor(config = {}) {
         
         // Pre-create all array lasers (initially hidden)
         this._createArrayLasers(scene, corners, targetPos);
-        
-        // Pre-create all opposite array lasers (initially hidden)
+          // Pre-create all opposite array lasers (initially hidden)
         this._createOppositeArrayLasers(scene, corners, targetPos);
-    }// Called every frame to update laser directions
+    }
+
+    // Called every frame to update laser directions
     update(deltaTime, clock, laserSystem) {
         if (this.startTime === null) {
             this.startTime = clock.getElapsedTime();
@@ -119,18 +127,54 @@ export class BehaviorArray_1 {    constructor(config = {}) {
         ]);
         geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
         const material = new THREE.LineBasicMaterial({ color: this.laserColor });
-        return new THREE.Line(geometry, material);
-    }    // Create 4 opposite lasers that target the object from opposite directions
+        const line = new THREE.Line(geometry, material);
+        
+        // Create corresponding cylinder mesh
+        const cylinderMaterial = new THREE.MeshBasicMaterial({ 
+            color: this.laserColor,
+            transparent: true,
+            opacity: 0.8
+        });
+        const cylinder = this._createCylinderSegment(start, end, cylinderMaterial);
+        
+        // Store the cylinder material for later cleanup
+        this.cylinderMaterials.push(cylinderMaterial);
+        this.laserCylinders.push(cylinder);
+        
+        // Attach cylinder to line for easy access
+        line.userData.cylinder = cylinder;
+        
+        return line;
+    }
+    
+    // Helper method to create a cylinder between two points
+    _createCylinderSegment(start, end, material) {
+        const direction = new THREE.Vector3().subVectors(end, start);
+        const length = direction.length();
+        const radius = 0.01; // Thin cylinder radius
+        
+        const geometry = new THREE.CylinderGeometry(radius, radius, length, 8);
+        const cylinder = new THREE.Mesh(geometry, material);
+        
+        // Position cylinder at midpoint
+        cylinder.position.copy(start).add(end).multiplyScalar(0.5);
+        
+        // Align cylinder with the direction vector
+        cylinder.lookAt(end);
+        cylinder.rotateX(Math.PI / 2); // Cylinders are created along Y-axis, rotate to align with direction
+        
+        return cylinder;
+    }// Create 4 opposite lasers that target the object from opposite directions
     _createOppositeLasers(scene, corners, targetPos) {
         for (let i = 0; i < 4; i++) {
             const cornerPos = corners[i] ? corners[i].clone() : new THREE.Vector3(0, 0, 0);
             
             // Calculate opposite position by reflecting corner through object center
             const oppositePos = this._calculateOppositePosition(cornerPos, targetPos);
-            
-            // Create laser from opposite position to object
+              // Create laser from opposite position to object
             const laser = this._createLaser(oppositePos, targetPos);
             scene.add(laser);
+            scene.add(laser.userData.cylinder); // Add the cylinder mesh
             
             // Store opposite laser data
             this.oppositeLasers.push({
@@ -160,10 +204,10 @@ export class BehaviorArray_1 {    constructor(config = {}) {
         for (let cornerIndex = 0; cornerIndex < 4; cornerIndex++) {
             const cornerStart = corners[cornerIndex] ? corners[cornerIndex].clone() : new THREE.Vector3(0, 0, 0);
             
-            for (let laserIndex = 0; laserIndex < this.lasersPerCorner; laserIndex++) {
-                const laser = this._createLaser(cornerStart, targetPos);
+            for (let laserIndex = 0; laserIndex < this.lasersPerCorner; laserIndex++) {                const laser = this._createLaser(cornerStart, targetPos);
                 laser.visible = false; // Start invisible
                 scene.add(laser);
+                scene.add(laser.userData.cylinder); // Add the cylinder mesh
                 
                 this.arrayLasers.push({
                     laser: laser,
@@ -182,10 +226,10 @@ export class BehaviorArray_1 {    constructor(config = {}) {
             const cornerPos = corners[cornerIndex] ? corners[cornerIndex].clone() : new THREE.Vector3(0, 0, 0);
             const oppositeStart = this._calculateOppositePosition(cornerPos, targetPos);
             
-            for (let laserIndex = 0; laserIndex < this.lasersPerCorner; laserIndex++) {
-                const laser = this._createLaser(oppositeStart, targetPos);
+            for (let laserIndex = 0; laserIndex < this.lasersPerCorner; laserIndex++) {                const laser = this._createLaser(oppositeStart, targetPos);
                 laser.visible = false; // Start invisible
                 scene.add(laser);
+                scene.add(laser.userData.cylinder); // Add the cylinder mesh
                 
                 this.oppositeArrayLasers.push({
                     laser: laser,
@@ -523,53 +567,76 @@ export class BehaviorArray_1 {    constructor(config = {}) {
         ];
         // Project from NDC to world at near plane
         return ndc.map(v => v.clone().unproject(camera));
-    }    // Cleanup method to remove lasers from the scene
+    }    
+    // Cleanup method to remove lasers from the scene  
     cleanup(laserSystem) {
+        const scene = laserSystem.getScene();
+        
         // Remove original lasers from the scene
-        if (this.originalLasers && laserSystem && laserSystem.getScene) {
-            const scene = laserSystem.getScene();
+        if (this.originalLasers && scene) {
             this.originalLasers.forEach(data => {
                 if (data.laser) {
                     scene.remove(data.laser);
+                    if (data.laser.userData.cylinder) {
+                        scene.remove(data.laser.userData.cylinder);
+                        data.laser.userData.cylinder.geometry.dispose();
+                    }
                 }
             });
         }
         
         // Remove opposite lasers from the scene
-        if (this.oppositeLasers && laserSystem && laserSystem.getScene) {
-            const scene = laserSystem.getScene();
+        if (this.oppositeLasers && scene) {
             this.oppositeLasers.forEach(data => {
                 if (data.laser) {
                     scene.remove(data.laser);
+                    if (data.laser.userData.cylinder) {
+                        scene.remove(data.laser.userData.cylinder);
+                        data.laser.userData.cylinder.geometry.dispose();
+                    }
                 }
             });
         }
         
         // Remove array lasers from the scene
-        if (this.arrayLasers && laserSystem && laserSystem.getScene) {
-            const scene = laserSystem.getScene();
+        if (this.arrayLasers && scene) {
             this.arrayLasers.forEach(data => {
                 if (data.laser) {
                     scene.remove(data.laser);
+                    if (data.laser.userData.cylinder) {
+                        scene.remove(data.laser.userData.cylinder);
+                        data.laser.userData.cylinder.geometry.dispose();
+                    }
                 }
             });
         }
         
         // Remove opposite array lasers from the scene
-        if (this.oppositeArrayLasers && laserSystem && laserSystem.getScene) {
-            const scene = laserSystem.getScene();
+        if (this.oppositeArrayLasers && scene) {
             this.oppositeArrayLasers.forEach(data => {
                 if (data.laser) {
                     scene.remove(data.laser);
+                    if (data.laser.userData.cylinder) {
+                        scene.remove(data.laser.userData.cylinder);
+                        data.laser.userData.cylinder.geometry.dispose();
+                    }
                 }
             });
         }
         
         // Remove all lasers from the main array
-        if (this.lasers && laserSystem && laserSystem.getScene) {
-            const scene = laserSystem.getScene();
-            this.lasers.forEach(laser => scene.remove(laser));
+        if (this.lasers && scene) {
+            this.lasers.forEach(laser => {
+                scene.remove(laser);
+                if (laser.userData.cylinder) {
+                    scene.remove(laser.userData.cylinder);
+                    laser.userData.cylinder.geometry.dispose();
+                }
+            });
         }
+        
+        // Clean up cylinder materials
+        this.cylinderMaterials.forEach(material => material.dispose());
         
         // Clear all arrays
         this.lasers = [];
@@ -577,8 +644,12 @@ export class BehaviorArray_1 {    constructor(config = {}) {
         this.oppositeLasers = [];
         this.arrayLasers = [];
         this.oppositeArrayLasers = [];
+        this.laserCylinders = [];
+        this.cylinderMaterials = [];
         this.isArrayExpanded = false;
         this.startTime = null;
+        
+        console.log('BehaviorArray_1: Cleaned up array behavior (wireframes and cylinders)');
     }
 }
 

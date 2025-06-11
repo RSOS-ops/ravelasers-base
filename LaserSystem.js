@@ -29,20 +29,18 @@ export class LaserSystem {
         this.model = model;
         this.controls = controls;
         this.camera = camera;
-        this.lasers = [];
-        this.modelVertices = []; // Store all model vertices
-        this.modelFaces = []; // Store all model faces with their normals and centers
         
-        // Initialize raycaster and interactive objects
+        // Make sure these arrays are initialized
+        this.modelVertices = [];
+        this.modelFaces = [];
+        this.lasers = [];
+        
+        // Core infrastructure only
+        this.activeBehaviors = [];
         this.raycaster = new THREE.Raycaster();
         this.interactiveObjects = [];
         
-        // Add model meshes to interactive objects for raycasting
-        this.setupInteractiveObjects();
-        
-        // Extract vertices and faces from the model
-        this.extractModelVertices();
-        this.extractModelFaces();
+        console.log("LaserSystem initialized");
     }
 
     setupInteractiveObjects() {
