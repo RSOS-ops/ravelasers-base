@@ -1,11 +1,13 @@
 // SaveLoadManager.js
 // Simple save/load system for laser configurations
 
-import { behaviors, savedBehaviorConfigs } from './behaviors/behaviors.js';
+import { behaviors } from './behaviors.js';
 import { banks, savedBankConfigs } from './banks.js';
 
-export class SaveLoadManager {    constructor() {
-        this.savedBehaviors = new Map(Object.entries(savedBehaviorConfigs));
+export class SaveLoadManager {
+    constructor() {
+        // Use the global behaviors object for available behaviors
+        this.savedBehaviors = new Map(Object.keys(behaviors).map(name => [name, { _behaviorType: name }]));
         this.savedBanks = new Map(Object.entries(savedBankConfigs));
         
         // Default persistence keys
@@ -40,14 +42,11 @@ export class SaveLoadManager {    constructor() {
      * @returns {object|null} - Behavior config or null if not found
      */
     loadBehavior(name) {
-        const config = this.savedBehaviors.get(name);
-        if (config) {
+        // Use the global behaviors object for loading
+        if (behaviors[name]) {
             console.log(`📁 Loaded behavior: "${name}"`);
-            
-            // Set as default for persistence
             this.setDefaultBehavior(name);
-            
-            return { ...config };
+            return { _behaviorType: name };
         } else {
             console.warn(`❌ Behavior "${name}" not found!`);
             return null;
@@ -58,15 +57,14 @@ export class SaveLoadManager {    constructor() {
      * List all saved behaviors
      */
     listBehaviors() {
+        const names = Object.keys(behaviors);
         console.log("📋 Saved Behaviors:");
-        if (this.savedBehaviors.size === 0) {
+        if (names.length === 0) {
             console.log("  (none saved)");
         } else {
-            this.savedBehaviors.forEach((config, name) => {
-                console.log(`  • ${name} (color: ${config.laserColor ? '#' + config.laserColor.toString(16) : 'default'})`);
-            });
+            names.forEach(name => console.log(`  • ${name}`));
         }
-        return Array.from(this.savedBehaviors.keys());
+        return names;
     }
 
     /**

@@ -1,7 +1,7 @@
 // LaserFactory.js - Dynamic Laser Configuration Factory
 // Create and test new laser configurations without modifying core files
 
-import { behaviors } from './behaviors/behaviors.js';
+import { behaviors } from './behaviors.js';
 
 export class LaserFactory {
     constructor(presetManager) {
